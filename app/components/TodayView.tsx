@@ -184,77 +184,77 @@ export default function TodayView({
 
       {/* Stats row */}
       <div
-        className="grid grid-cols-3 gap-4 mb-8 max-w-2xl stagger-item"
+        className="grid grid-cols-3 gap-4 mb-8 stagger-item"
         style={{ "--i": 1 } as React.CSSProperties}
       >
         {/* Tasks stat */}
         <button
           onClick={() => onNavigate("tasks")}
-          className="group flex items-center gap-4 p-4 rounded-xl bg-white/[0.025] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-200"
+          className="group flex items-center gap-5 p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-200"
         >
-          <ProgressRing progress={taskProgress} color="#528BFF" size={48} strokeWidth={3}>
-            <CheckCircle size={18} weight="light" className="text-blue-400/70" />
+          <ProgressRing progress={taskProgress} color="#528BFF" size={52} strokeWidth={3}>
+            <CheckCircle size={20} weight="light" className="text-blue-400/70" />
           </ProgressRing>
           <div className="text-left min-w-0">
-            <p className="text-[22px] font-semibold text-white/85 tabular-nums leading-none">
+            <p className="text-[26px] font-semibold text-white/85 tabular-nums leading-none">
               {todayTasks.length + overdueTasks.length}
             </p>
-            <p className="text-[11px] text-white/30 mt-1">Tasks due</p>
+            <p className="text-[12px] text-white/30 mt-1.5">Tasks due</p>
           </div>
         </button>
 
         {/* Habits stat */}
         <button
           onClick={() => onNavigate("habits")}
-          className="group flex items-center gap-4 p-4 rounded-xl bg-white/[0.025] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-200"
+          className="group flex items-center gap-5 p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-200"
         >
-          <ProgressRing progress={habitProgress} color="#34D399" size={48} strokeWidth={3}>
-            <Lightning size={18} weight="light" className="text-green-400/70" />
+          <ProgressRing progress={habitProgress} color="#34D399" size={52} strokeWidth={3}>
+            <Lightning size={20} weight="light" className="text-green-400/70" />
           </ProgressRing>
           <div className="text-left min-w-0">
-            <p className="text-[22px] font-semibold text-white/85 tabular-nums leading-none">
+            <p className="text-[26px] font-semibold text-white/85 tabular-nums leading-none">
               {habitsCompletedToday}
-              <span className="text-[13px] text-white/25 font-normal">
+              <span className="text-[14px] text-white/25 font-normal">
                 /{totalHabits}
               </span>
             </p>
-            <p className="text-[11px] text-white/30 mt-1">Habits done</p>
+            <p className="text-[12px] text-white/30 mt-1.5">Habits done</p>
           </div>
         </button>
 
         {/* Focus stat */}
         <button
           onClick={() => onNavigate("focus")}
-          className="group flex items-center gap-4 p-4 rounded-xl bg-white/[0.025] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-200"
+          className="group flex items-center gap-5 p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-200"
         >
           <ProgressRing
             progress={Math.min(focusMinutes / 120, 1)}
             color="#A78BFA"
-            size={48}
+            size={52}
             strokeWidth={3}
           >
-            <Timer size={18} weight="light" className="text-purple-400/70" />
+            <Timer size={20} weight="light" className="text-purple-400/70" />
           </ProgressRing>
           <div className="text-left min-w-0">
-            <p className="text-[22px] font-semibold text-white/85 tabular-nums leading-none">
+            <p className="text-[26px] font-semibold text-white/85 tabular-nums leading-none">
               {focusMinutes}
-              <span className="text-[13px] text-white/25 font-normal">m</span>
+              <span className="text-[14px] text-white/25 font-normal">m</span>
             </p>
-            <p className="text-[11px] text-white/30 mt-1">Focus time</p>
+            <p className="text-[12px] text-white/30 mt-1.5">Focus time</p>
           </div>
         </button>
       </div>
 
       {/* Content cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-4xl">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Schedule card */}
         <div
-          className="rounded-xl bg-white/[0.025] border border-white/[0.06] overflow-hidden stagger-item"
+          className="rounded-2xl bg-white/[0.025] border border-white/[0.06] overflow-hidden stagger-item"
           style={{ "--i": 2 } as React.CSSProperties}
         >
-          <div className="px-5 py-3.5 border-b border-white/[0.04] flex items-center gap-2">
+          <div className="px-6 py-4 border-b border-white/[0.04] flex items-center gap-2.5">
             <CalendarBlank
-              size={15}
+              size={16}
               weight="light"
               className="text-white/30"
             />
@@ -266,12 +266,12 @@ export default function TodayView({
             </span>
             <button
               onClick={() => onNavigate("calendar")}
-              className="ml-1 p-0.5 rounded hover:bg-white/[0.06] text-white/20 hover:text-white/40 transition-all"
+              className="ml-1 p-1 rounded-lg hover:bg-white/[0.06] text-white/20 hover:text-white/40 transition-all"
             >
-              <ArrowRight size={12} weight="light" />
+              <ArrowRight size={13} weight="light" />
             </button>
           </div>
-          <div className="p-4">
+          <div className="p-5">
             {todayEvents.length === 0 ? (
               <p className="text-[12px] text-white/15 text-center py-8">
                 No events scheduled
@@ -333,12 +333,12 @@ export default function TodayView({
 
         {/* Tasks card */}
         <div
-          className="rounded-xl bg-white/[0.025] border border-white/[0.06] overflow-hidden stagger-item"
+          className="rounded-2xl bg-white/[0.025] border border-white/[0.06] overflow-hidden stagger-item"
           style={{ "--i": 3 } as React.CSSProperties}
         >
-          <div className="px-5 py-3.5 border-b border-white/[0.04] flex items-center gap-2">
+          <div className="px-6 py-4 border-b border-white/[0.04] flex items-center gap-2.5">
             <CheckCircle
-              size={15}
+              size={16}
               weight="light"
               className="text-white/30"
             />
@@ -350,12 +350,12 @@ export default function TodayView({
             </span>
             <button
               onClick={() => onNavigate("tasks")}
-              className="ml-1 p-0.5 rounded hover:bg-white/[0.06] text-white/20 hover:text-white/40 transition-all"
+              className="ml-1 p-1 rounded-lg hover:bg-white/[0.06] text-white/20 hover:text-white/40 transition-all"
             >
-              <ArrowRight size={12} weight="light" />
+              <ArrowRight size={13} weight="light" />
             </button>
           </div>
-          <div className="p-3">
+          <div className="p-4">
             {[...overdueTasks, ...todayTasks].length === 0 ? (
               <div className="text-center py-8">
                 <TrendUp

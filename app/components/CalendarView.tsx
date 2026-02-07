@@ -295,7 +295,7 @@ export default function CalendarView({ events, onEventsChange }: Props) {
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 onKeyDown={(e) => e.key === "Enter" && addEvent()}
-                className="w-full px-2.5 py-1.5 text-[12px] rounded-md bg-white/[0.05] border border-white/[0.08] text-white/90 placeholder:text-white/25 outline-none focus:border-white/[0.15] transition-colors"
+                className="w-full px-2.5 py-1.5 text-[12px] rounded-full bg-white/[0.05] border border-white/[0.08] text-white/90 placeholder:text-white/25 outline-none focus:border-white/[0.15] transition-colors"
                 autoFocus
               />
               <div className="flex gap-1.5 items-center">
@@ -303,14 +303,14 @@ export default function CalendarView({ events, onEventsChange }: Props) {
                   type="time"
                   value={form.startTime}
                   onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                  className="flex-1 px-2 py-1 text-[11px] rounded-md bg-white/[0.05] border border-white/[0.08] text-white/70 outline-none focus:border-white/[0.15]"
+                  className="flex-1 px-2 py-1 text-[11px] rounded-full bg-white/[0.05] border border-white/[0.08] text-white/70 outline-none focus:border-white/[0.15]"
                 />
                 <span className="text-[10px] text-white/20">→</span>
                 <input
                   type="time"
                   value={form.endTime}
                   onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                  className="flex-1 px-2 py-1 text-[11px] rounded-md bg-white/[0.05] border border-white/[0.08] text-white/70 outline-none focus:border-white/[0.15]"
+                  className="flex-1 px-2 py-1 text-[11px] rounded-full bg-white/[0.05] border border-white/[0.08] text-white/70 outline-none focus:border-white/[0.15]"
                 />
               </div>
               <div className="flex gap-1 items-center">
@@ -772,7 +772,7 @@ function WeekView({
                     <button
                       key={ev.id}
                       onClick={() => onSelect(d)}
-                      className="absolute rounded-[5px] px-2 py-1 text-left hover:brightness-110 transition-all z-[5] border-l-[2.5px] overflow-hidden"
+                      className="absolute rounded-xl px-2 py-1 text-left hover:brightness-110 transition-all z-[5] border-l-[2.5px] overflow-hidden"
                       style={{
                         top,
                         height: ht,

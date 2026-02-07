@@ -97,9 +97,9 @@ export default function NotesView({ notes, onNotesChange }: Props) {
 
   return (
     <div className="h-full overflow-y-auto p-6 animate-viewEnter">
-      <div className="max-w-4xl">
+      <div>
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-lg font-semibold text-white/90">Notes</h2>
             <p className="text-[12px] text-white/30 mt-0.5">
@@ -131,27 +131,27 @@ export default function NotesView({ notes, onNotesChange }: Props) {
               placeholder="Search notes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-[13px] rounded-lg"
+              className="w-full pl-9 pr-3 py-2 text-[13px] rounded-full"
             />
           </div>
         )}
 
         {/* Add note form */}
         {adding && (
-          <div className="mb-5 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-3 animate-slideDown">
+          <div className="mb-6 p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-3 animate-slideDown">
             <input
               type="text"
               placeholder="Title..."
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full px-3 py-2 text-[13px] rounded-lg font-medium"
+              className="w-full px-3 py-2 text-[13px] rounded-full font-medium"
               autoFocus
             />
             <textarea
               placeholder="Write something..."
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
-              className="w-full px-3 py-2 text-[13px] rounded-lg resize-none min-h-[80px]"
+              className="w-full px-3 py-2 text-[13px] rounded-2xl resize-none min-h-[80px]"
               rows={3}
             />
             <div className="flex items-center gap-2">
@@ -194,14 +194,14 @@ export default function NotesView({ notes, onNotesChange }: Props) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((note, idx) => {
             const isEditing = editingId === note.id;
 
             return (
               <div
                 key={note.id}
-                className="group rounded-xl border border-white/[0.06] overflow-hidden transition-all duration-200 hover:border-white/[0.10] card-hover stagger-item"
+                className="group rounded-2xl border border-white/[0.06] overflow-hidden transition-all duration-200 hover:border-white/[0.10] card-hover stagger-item"
                 style={{
                   "--i": idx,
                   background: note.color + "08",
@@ -210,7 +210,7 @@ export default function NotesView({ notes, onNotesChange }: Props) {
                 {/* Color accent line */}
                 <div className="h-[2px]" style={{ background: note.color + "30" }} />
 
-                <div className="p-4">
+                <div className="p-5">
                   {/* Title */}
                   {isEditing ? (
                     <input
@@ -224,7 +224,7 @@ export default function NotesView({ notes, onNotesChange }: Props) {
                     />
                   ) : (
                     <p
-                      className="text-[13px] font-semibold text-white/80 mb-1.5 truncate cursor-pointer"
+                      className="text-[14px] font-semibold text-white/80 mb-2 truncate cursor-pointer"
                       onClick={() => setEditingId(note.id)}
                     >
                       {note.pinned && (

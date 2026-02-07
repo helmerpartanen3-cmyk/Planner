@@ -141,9 +141,11 @@ export default function FocusView({ sessions, onSessionsChange }: Props) {
 
   return (
     <div className="h-full overflow-y-auto flex flex-col items-center justify-center p-6 animate-viewEnter">
-      <div className="max-w-md w-full flex flex-col items-center">
-        {/* Mode selector */}
-        <div className="flex rounded-xl bg-white/[0.03] border border-white/[0.06] p-1 mb-12">
+      <div className="w-full flex flex-col lg:flex-row items-center lg:items-start justify-center gap-12 lg:gap-16">
+        {/* Timer section */}
+        <div className="flex flex-col items-center">
+          {/* Mode selector */}
+          <div className="flex rounded-xl bg-white/[0.03] border border-white/[0.06] p-1 mb-12">
           {(Object.keys(MODES) as ModeKey[]).map((key) => {
             const m = MODES[key];
             return (
@@ -256,17 +258,17 @@ export default function FocusView({ sessions, onSessionsChange }: Props) {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 w-full max-w-sm">
-          <div className="rounded-xl bg-white/[0.025] border border-white/[0.06] p-4 text-center">
+          <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-4 text-center">
             <Timer size={16} weight="light" className="text-blue-400/50 mx-auto mb-1.5" />
             <p className="text-xl font-semibold text-white/80 tabular-nums">{todayMinutes}</p>
             <p className="text-[10px] text-white/25 mt-0.5">Minutes today</p>
           </div>
-          <div className="rounded-xl bg-white/[0.025] border border-white/[0.06] p-4 text-center">
+          <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-4 text-center">
             <Lightning size={16} weight="light" className="text-green-400/50 mx-auto mb-1.5" />
             <p className="text-xl font-semibold text-white/80 tabular-nums">{todaySessions.length}</p>
             <p className="text-[10px] text-white/25 mt-0.5">Sessions</p>
           </div>
-          <div className="rounded-xl bg-white/[0.025] border border-white/[0.06] p-4 text-center">
+          <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-4 text-center">
             <Coffee size={16} weight="light" className="text-purple-400/50 mx-auto mb-1.5" />
             <p className="text-xl font-semibold text-white/80 tabular-nums">{sessionsCompleted}</p>
             <p className="text-[10px] text-white/25 mt-0.5">This round</p>
@@ -296,6 +298,57 @@ export default function FocusView({ sessions, onSessionsChange }: Props) {
             </span>
           </div>
         )}
+        </div>
+
+        {/* Side info panel */}
+        <div className="hidden lg:flex flex-col gap-4 w-64 mt-4">
+          {/* How Pomodoro works */}
+          <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-5">
+            <h3 className="text-[12px] font-medium text-white/40 mb-4 uppercase tracking-wider">How it works</h3>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-blue-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-[10px] text-blue-400 font-medium">1</span>
+                </div>
+                <p className="text-[12px] text-white/35 leading-relaxed">Focus for 25 minutes on your task</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-green-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-[10px] text-green-400 font-medium">2</span>
+                </div>
+                <p className="text-[12px] text-white/35 leading-relaxed">Take a 5-minute break</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-purple-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-[10px] text-purple-400 font-medium">3</span>
+                </div>
+                <p className="text-[12px] text-white/35 leading-relaxed">After 4 sessions, enjoy a longer 15-minute break</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Session history */}
+          <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-5">
+            <h3 className="text-[12px] font-medium text-white/40 mb-4 uppercase tracking-wider">Today&apos;s sessions</h3>
+            {todaySessions.length === 0 ? (
+              <p className="text-[12px] text-white/20 text-center py-4">No sessions yet today</p>
+            ) : (
+              <div className="space-y-2">
+                {todaySessions.slice(-5).reverse().map((s, i) => (
+                  <div key={s.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Lightning size={12} weight="light" className="text-blue-400/50" />
+                      <span className="text-[12px] text-white/40">
+                        {new Date(s.completedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-white/25 tabular-nums">{Math.round(s.duration / 60)}m</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

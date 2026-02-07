@@ -129,7 +129,7 @@ export default function HabitsView({ habits, onHabitsChange }: Props) {
 
   return (
     <div className="h-full overflow-y-auto p-6 animate-viewEnter">
-      <div className="max-w-2xl">
+      <div>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -172,14 +172,14 @@ export default function HabitsView({ habits, onHabitsChange }: Props) {
 
         {/* Add habit form */}
         {adding && (
-          <div className="mb-5 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-3 animate-slideDown">
+          <div className="mb-5 p-5 rounded-2xl bg-neutral-800/70 border border-white/[0.06] space-y-3 animate-slideDown">
             <input
               type="text"
               placeholder="Habit name..."
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               onKeyDown={(e) => e.key === "Enter" && addHabit()}
-              className="w-full px-3 py-2 text-[13px] rounded-lg"
+              className="w-full px-3 py-2 text-[13px] rounded-full"
               autoFocus
             />
             <div className="flex items-center gap-3">
@@ -188,7 +188,7 @@ export default function HabitsView({ habits, onHabitsChange }: Props) {
                   <button
                     key={e}
                     onClick={() => setForm({ ...form, emoji: e })}
-                    className={`w-7 h-7 rounded-md flex items-center justify-center text-sm transition-all ${
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm transition-all ${
                       form.emoji === e
                         ? "bg-white/[0.08] scale-110"
                         : "hover:bg-white/[0.04] opacity-50 hover:opacity-100"
@@ -218,7 +218,7 @@ export default function HabitsView({ habits, onHabitsChange }: Props) {
               <button
                 onClick={addHabit}
                 disabled={!form.name.trim()}
-                className="px-4 py-1.5 text-[12px] rounded-lg bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 disabled:opacity-30 disabled:cursor-default transition-all font-medium"
+                className="px-5 py-2 text-[12px] rounded-lg bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 disabled:opacity-30 disabled:cursor-default transition-all font-medium"
               >
                 Add Habit
               </button>
@@ -226,28 +226,32 @@ export default function HabitsView({ habits, onHabitsChange }: Props) {
           </div>
         )}
 
-        {/* Week header */}
-        {habits.length > 0 && (
-          <div className="flex items-center mb-2 pl-[52px]">
-            <div className="flex-1" />
-            <div className="flex items-center gap-[6px] mr-1">
-              {DAYS_LABEL.map((d, i) => (
-                <span
-                  key={i}
-                  className={`w-6 text-center text-[9px] font-medium ${
-                    i === todayWeekIdx ? "text-blue-400/70" : "text-white/20"
-                  }`}
-                >
-                  {d}
-                </span>
-              ))}
-            </div>
-            <div className="w-8" />
-          </div>
-        )}
+        {/* Two-column layout */}
+        <div className="flex gap-6">
+          {/* Main content */}
+          <div className="flex-1 min-w-0">
+            {/* Week header */}
+            {habits.length > 0 && (
+              <div className="flex items-center mb-2 pl-[52px]">
+                <div className="flex-1" />
+                <div className="flex items-center gap-[6px] mr-1">
+                  {DAYS_LABEL.map((d, i) => (
+                    <span
+                      key={i}
+                      className={`w-6 text-center text-[9px] font-medium ${
+                        i === todayWeekIdx ? "text-blue-400/70" : "text-white/20"
+                      }`}
+                    >
+                      {d}
+                    </span>
+                  ))}
+                </div>
+                <div className="w-8" />
+              </div>
+            )}
 
-        {/* Habits list */}
-        <div className="space-y-1">
+            {/* Habits list */}
+            <div className="space-y-1">
           {habits.length === 0 && !adding && (
             <div className="text-center mt-20">
               <Lightning size={32} weight="light" className="text-white/10 mx-auto mb-3" />
@@ -353,25 +357,89 @@ export default function HabitsView({ habits, onHabitsChange }: Props) {
         {/* Stats footer */}
         {habits.length > 0 && (
           <div className="mt-8 grid grid-cols-3 gap-3">
-            <div className="rounded-xl bg-white/[0.025] border border-white/[0.06] p-4 text-center stagger-item" style={{ "--i": habits.length + 2 } as React.CSSProperties}>
+            <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-4 text-center stagger-item" style={{ "--i": habits.length + 2 } as React.CSSProperties}>
               <TrendUp size={16} weight="light" className="text-blue-400/50 mx-auto mb-1.5" />
               <p className="text-xl font-semibold text-white/80 tabular-nums">{completedToday}</p>
               <p className="text-[10px] text-white/25 mt-0.5">Done today</p>
             </div>
-            <div className="rounded-xl bg-white/[0.025] border border-white/[0.06] p-4 text-center stagger-item" style={{ "--i": habits.length + 3 } as React.CSSProperties}>
+            <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-4 text-center stagger-item" style={{ "--i": habits.length + 3 } as React.CSSProperties}>
               <Fire size={16} weight="light" className="text-orange-400/50 mx-auto mb-1.5" />
               <p className="text-xl font-semibold text-white/80 tabular-nums">
                 {Math.max(0, ...habits.map((h) => getStreak(h.completedDates)))}
               </p>
               <p className="text-[10px] text-white/25 mt-0.5">Best streak</p>
             </div>
-            <div className="rounded-xl bg-white/[0.025] border border-white/[0.06] p-4 text-center stagger-item" style={{ "--i": habits.length + 4 } as React.CSSProperties}>
+            <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-4 text-center stagger-item" style={{ "--i": habits.length + 4 } as React.CSSProperties}>
               <Lightning size={16} weight="light" className="text-purple-400/50 mx-auto mb-1.5" />
               <p className="text-xl font-semibold text-white/80 tabular-nums">{totalHabits}</p>
               <p className="text-[10px] text-white/25 mt-0.5">Active habits</p>
             </div>
           </div>
         )}
+          </div>
+
+          {/* Side panel - stats */}
+          {habits.length > 0 && (
+            <div className="w-64 shrink-0 hidden lg:flex flex-col gap-4">
+              {/* Progress card */}
+              <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-5">
+                <h3 className="text-[12px] font-medium text-white/40 mb-4 uppercase tracking-wider">Today&apos;s progress</h3>
+                <div className="flex items-center justify-center mb-4">
+                  <div className="relative">
+                    <svg width={100} height={100} className="transform -rotate-90">
+                      <circle cx={50} cy={50} r={44} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={4} />
+                      <circle
+                        cx={50} cy={50} r={44} fill="none"
+                        stroke="#528BFF"
+                        strokeWidth={4}
+                        strokeDasharray={2 * Math.PI * 44}
+                        strokeDashoffset={2 * Math.PI * 44 * (1 - progress)}
+                        strokeLinecap="round"
+                        className="transition-all duration-700"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-[20px] font-semibold text-white/80 tabular-nums">{Math.round(progress * 100)}%</span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-center text-[11px] text-white/30">
+                  {completedToday} of {totalHabits} completed
+                </p>
+              </div>
+
+              {/* Stats card */}
+              <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-5">
+                <h3 className="text-[12px] font-medium text-white/40 mb-4 uppercase tracking-wider">Stats</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <TrendUp size={14} weight="light" className="text-blue-400/50" />
+                      <span className="text-[12px] text-white/35">Done today</span>
+                    </div>
+                    <span className="text-[15px] font-semibold text-white/75 tabular-nums">{completedToday}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Fire size={14} weight="light" className="text-orange-400/50" />
+                      <span className="text-[12px] text-white/35">Best streak</span>
+                    </div>
+                    <span className="text-[15px] font-semibold text-white/75 tabular-nums">
+                      {Math.max(0, ...habits.map((h) => getStreak(h.completedDates)))}d
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Lightning size={14} weight="light" className="text-purple-400/50" />
+                      <span className="text-[12px] text-white/35">Active</span>
+                    </div>
+                    <span className="text-[15px] font-semibold text-white/75 tabular-nums">{totalHabits}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

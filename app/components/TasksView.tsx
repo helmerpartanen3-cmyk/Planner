@@ -112,9 +112,9 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
   };
 
   return (
-    <div className="flex flex-col h-full p-6 max-w-2xl animate-viewEnter">
+    <div className="flex flex-col h-full p-6 animate-viewEnter">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-semibold text-white/90">Tasks</h2>
           <p className="text-[12px] text-white/30 mt-0.5">
@@ -173,14 +173,14 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
 
       {/* Add task form */}
       {adding && (
-        <div className="mb-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-3 animate-slideDown">
+        <div className="mb-5 p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-3 animate-slideDown">
           <input
             type="text"
             placeholder="What needs to be done?"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addTask()}
-            className="w-full px-3 py-2 text-[13px] rounded-lg"
+            className="w-full px-3 py-2 text-[13px] rounded-full"
             autoFocus
           />
           <div className="flex items-center gap-3 flex-wrap">
@@ -190,7 +190,7 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
                 type="date"
                 value={newDueDate}
                 onChange={(e) => setNewDueDate(e.target.value)}
-                className="px-2 py-1 text-[12px] rounded-lg"
+                className="px-2 py-1 text-[12px] rounded-full"
               />
             </div>
 
@@ -200,7 +200,7 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
                 <button
                   key={p}
                   onClick={() => setNewPriority(p)}
-                  className={`px-2 py-1 text-[11px] rounded-md transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1.5 text-[11px] rounded-md transition-all flex items-center gap-1.5 ${
                     newPriority === p
                       ? "bg-white/[0.07] text-white/70"
                       : "text-white/25 hover:text-white/45"
@@ -219,7 +219,7 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
             <button
               onClick={addTask}
               disabled={!newTitle.trim()}
-              className="px-4 py-1.5 text-[12px] rounded-lg bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 disabled:opacity-30 disabled:cursor-default transition-all font-medium"
+              className="px-5 py-2 text-[12px] rounded-lg bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 disabled:opacity-30 disabled:cursor-default transition-all font-medium"
             >
               Add
             </button>
@@ -227,8 +227,11 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
         </div>
       )}
 
-      {/* Task list */}
-      <div className="flex-1 overflow-y-auto space-y-0.5">
+      {/* Two-column layout */}
+      <div className="flex-1 flex gap-6 overflow-hidden min-h-0">
+        {/* Task list */}
+        <div className="flex-1 overflow-y-auto min-w-0">
+        <div className="space-y-0.5">
         {pending.length === 0 && !adding && (
           <div className="text-center mt-16">
             <CheckSquare
@@ -345,6 +348,59 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
             )}
           </>
         )}
+        </div>
+        </div>
+
+        {/* Side panel - stats */}
+        <div className="w-64 shrink-0 hidden lg:flex flex-col gap-4">
+          {/* Overview card */}
+          <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-5">
+            <h3 className="text-[12px] font-medium text-white/40 mb-4 uppercase tracking-wider">Overview</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] text-white/35">Pending</span>
+                <span className="text-[15px] font-semibold text-white/75 tabular-nums">{allPending.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] text-white/35">Completed</span>
+                <span className="text-[15px] font-semibold text-white/75 tabular-nums">{completed.length}</span>
+              </div>
+              <div className="h-px bg-white/[0.06]" />
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] text-white/35">Total</span>
+                <span className="text-[15px] font-semibold text-white/75 tabular-nums">{tasks.length}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Priority breakdown */}
+          <div className="rounded-2xl bg-white/[0.025] border border-white/[0.06] p-5">
+            <h3 className="text-[12px] font-medium text-white/40 mb-4 uppercase tracking-wider">By priority</h3>
+            <div className="space-y-3">
+              {(["high", "medium", "low"] as const).map((p) => {
+                const count = allPending.filter((t) => (t.priority || "medium") === p).length;
+                const pct = allPending.length > 0 ? (count / allPending.length) * 100 : 0;
+                return (
+                  <div key={p}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${PRIORITY_CONFIG[p].dot}`} style={{ opacity: 0.7 }} />
+                        <span className="text-[12px] text-white/45">{PRIORITY_CONFIG[p].label}</span>
+                      </div>
+                      <span className="text-[12px] font-medium text-white/55 tabular-nums">{count}</span>
+                    </div>
+                    <div className="h-1 rounded-full bg-white/[0.04] overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, background: PRIORITY_CONFIG[p].color, opacity: 0.5 }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
