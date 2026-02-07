@@ -18,6 +18,7 @@ type StarEx = Star & {
 -------------------------------------------------- */
 
 let starData: StarEx[] = [];
+let twinkleIndices: number[] = []; // indices of stars that twinkle
 let starFieldW = 0;
 let starFieldH = 0;
 
@@ -93,6 +94,51 @@ const g1 = 0.012 * glowStrength; // was 0.007
 };
 
 /* --------------------------------------------------
+   Twinkle bloom sprite (larger, softer glow)
+-------------------------------------------------- */
+
+const twinkleBloomSprites = new Map<string, HTMLCanvasElement>();
+
+const getTwinkleBloomSprite = (
+  rgb: [number, number, number],
+  bloomRadius: number
+) => {
+  const rB = Math.round(bloomRadius * 4) / 4;
+  const cB = `${Math.round(rgb[0] * 10)}${Math.round(rgb[1] * 10)}${Math.round(rgb[2] * 10)}`;
+  const key = `tb_${rB}_${cB}`;
+
+  const cached = twinkleBloomSprites.get(key);
+  if (cached) return cached;
+
+  const size = Math.ceil(bloomRadius * 2 + 4);
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+
+  const cx = size / 2;
+  const cy = size / 2;
+
+  // Bright core
+  ctx.fillStyle = `rgba(${rgb.map(v => Math.round(v * 255)).join(',')},1)`;
+  ctx.fillRect(cx - 1, cy - 1, 2, 2);
+
+  // Bloom glow - soft radial
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, bloomRadius);
+  glow.addColorStop(0, `rgba(${rgb.map(v => Math.round(v * 255)).join(',')},0.35)`);
+  glow.addColorStop(0.2, `rgba(${rgb.map(v => Math.round(v * 255)).join(',')},0.18)`);
+  glow.addColorStop(0.5, `rgba(${rgb.map(v => Math.round(v * 255)).join(',')},0.06)`);
+  glow.addColorStop(1, `rgba(${rgb.map(v => Math.round(v * 255)).join(',')},0)`);
+
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(cx, cy, bloomRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  twinkleBloomSprites.set(key, canvas);
+  return canvas;
+};
+
+/* --------------------------------------------------
    Atmospheric extinction
 -------------------------------------------------- */
 
@@ -128,6 +174,12 @@ export const ensureStarField = (width: number, height: number) => {
       extinction: starExtinction(s.y, height)
     };
   });
+
+  // Pre-collect twinkling star indices for the dynamic pass
+  twinkleIndices = [];
+  for (let i = 0; i < starData.length; i++) {
+    if (starData[i].twinkle) twinkleIndices.push(i);
+  }
 
   starFieldW = width;
   starFieldH = height;
@@ -190,4 +242,44 @@ export const drawStars = (
   ctx.drawImage(starLayerCanvas, 0, 0);
   ctx.imageSmoothingEnabled = true;
   ctx.restore();
+
+  // ---------- TWINKLE + BLOOM OVERLAY ----------
+  if (twinkleIndices.length > 0 && globalAlpha > 0.05) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.imageSmoothingEnabled = true;
+
+    const t = time * 0.001; // seconds
+
+    for (let j = 0; j < twinkleIndices.length; j++) {
+      const s = starData[twinkleIndices[j]];
+      const tw = s.twinkle!;
+
+      // Compound sine for organic, non-uniform flicker
+      const raw =
+        Math.sin(t * tw.speed + tw.phase) * 0.6 +
+        Math.sin(t * tw.speed * 1.73 + tw.phase * 2.1) * 0.3 +
+        Math.sin(t * tw.speed * 0.37 + tw.phase * 0.7) * 0.1;
+
+      // Map to 0..1 then apply amplitude
+      const twinkle01 = clamp01((raw + 1) * 0.5);
+      const brightBoost = twinkle01 * tw.amplitude;
+
+      if (brightBoost < 0.05) continue; // skip dim phases for perf
+
+      const a = clamp01(s.intensity * s.extinction * brightBoost * 2.5) * globalAlpha;
+      if (a < 0.005) continue;
+
+      // Bloom radius scales with brightness
+      const bloomR = 3.5 + brightBoost * 8.0 * (0.5 + s.intensity * 0.5);
+      const sprite = getTwinkleBloomSprite(s.rgb, bloomR);
+      const half = sprite.width / 2;
+
+      ctx.globalAlpha = a;
+      ctx.drawImage(sprite, s.x - half, s.y - half);
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
 };

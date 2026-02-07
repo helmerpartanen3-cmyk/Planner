@@ -10,6 +10,11 @@ export type Star = {
   size: number; // point size (mostly constant)
   color: "cool" | "neutral" | "warm";
   glow?: number; // optional halo strength
+  twinkle?: {
+    phase: number;    // 0..2π random offset
+    speed: number;    // radians per second (0.8–3.0)
+    amplitude: number; // 0..1 brightness swing
+  };
 };
 
 /* ------------------ utilities ------------------ */
@@ -110,6 +115,20 @@ export const createStarField = (
         star.glow = brightness * 2.4;
       }
 
+      // Atmospheric scintillation (twinkle)
+      // Brighter stars near horizon twinkle more — realistic
+      const horizonFactor = Math.pow(yNorm, 1.5); // stronger near bottom
+      const twinkleChance = brightness > 0.3
+        ? 0.08 + horizonFactor * 0.12 + brightness * 0.06
+        : 0.02;
+      if (Math.random() < twinkleChance) {
+        star.twinkle = {
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.8 + Math.random() * 2.2,
+          amplitude: 0.3 + Math.random() * 0.5 * (0.5 + brightness * 0.5),
+        };
+      }
+
       stars.push(star);
     }
   }
@@ -127,7 +146,12 @@ export const createStarField = (
       baseAlpha: 0.8 + Math.random() * 0.2,
       size: 1.5,
       glow: 3.0,
-      color: starColor(Math.random())
+      color: starColor(Math.random()),
+      twinkle: Math.random() < 0.6 ? {
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.6 + Math.random() * 1.5,
+        amplitude: 0.25 + Math.random() * 0.35,
+      } : undefined,
     });
   }
 
