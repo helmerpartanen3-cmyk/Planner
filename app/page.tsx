@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Sidebar, { DEFAULT_NAV_ORDER } from "./components/Sidebar";
 import Titlebar from "./components/Titlebar";
 import CalendarView from "./components/CalendarView";
@@ -10,8 +10,10 @@ import WeatherView from "./components/WeatherView";
 import HabitsView from "./components/HabitsView";
 import NotesView from "./components/NotesView";
 import FocusView from "./components/FocusView";
+import GoalsView from "./components/GoalsView";
+import CommandPalette from "./components/CommandPalette";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import type { ViewType, CalendarEvent, Task, Habit, Note, FocusSession } from "./types";
+import type { ViewType, CalendarEvent, Task, Habit, Note, FocusSession, Goal } from "./types";
 
 export default function Home() {
   const [navOrderRaw, setNavOrder, navHydrated] = useLocalStorage<ViewType[]>(
@@ -37,17 +39,13 @@ export default function Home() {
   }, [navOrder, navOrderRaw, setNavOrder]);
 
   const [view, setView] = useState<ViewType | null>(null);
-  const [events, setEvents] = useLocalStorage<CalendarEvent[]>(
-    "clarity-events",
-    []
-  );
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [events, setEvents] = useLocalStorage<CalendarEvent[]>("clarity-events", []);
   const [tasks, setTasks] = useLocalStorage<Task[]>("clarity-tasks", []);
   const [habits, setHabits] = useLocalStorage<Habit[]>("clarity-habits", []);
   const [notes, setNotes] = useLocalStorage<Note[]>("clarity-notes", []);
-  const [focusSessions, setFocusSessions] = useLocalStorage<FocusSession[]>(
-    "clarity-focus-sessions",
-    []
-  );
+  const [focusSessions, setFocusSessions] = useLocalStorage<FocusSession[]>("clarity-focus-sessions", []);
+  const [goals, setGoals] = useLocalStorage<Goal[]>("clarity-goals", []);
 
   // Set the startup view to the first item in the persisted order (wait for hydration)
   useEffect(() => {
@@ -55,6 +53,33 @@ export default function Home() {
       setView(navOrder[0]);
     }
   }, [navOrder, navHydrated, view]);
+
+  // Ctrl+K command palette shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setCommandPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const handleQuickAdd = useCallback(
+    (type: string) => {
+      if (type === "task") {
+        setView("tasks");
+      } else if (type === "event") {
+        setView("calendar");
+      } else if (type === "note") {
+        setView("notes");
+      } else if (type === "habit") {
+        setView("habits");
+      }
+    },
+    []
+  );
 
   const currentView = view ?? navOrder[0] ?? "today";
 
@@ -66,6 +91,7 @@ export default function Home() {
         navOrder={navOrder}
         onNavOrderChange={setNavOrder}
         isWeather={currentView === "weather"}
+        onCommandPalette={() => setCommandPaletteOpen(true)}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -78,6 +104,7 @@ export default function Home() {
                 events={events}
                 tasks={tasks}
                 habits={habits}
+                goals={goals}
                 focusSessions={focusSessions}
                 onTasksChange={setTasks}
                 onNavigate={setView}
@@ -90,21 +117,35 @@ export default function Home() {
               <TasksView tasks={tasks} onTasksChange={setTasks} />
             )}
             {currentView === "habits" && (
-              <HabitsView habits={habits} onHabitsChange={setHabits} />
+              <HabitsView habits={habits} setHabits={setHabits} />
             )}
             {currentView === "notes" && (
               <NotesView notes={notes} onNotesChange={setNotes} />
             )}
             {currentView === "focus" && (
-              <FocusView
-                sessions={focusSessions}
-                onSessionsChange={setFocusSessions}
-              />
+              <FocusView sessions={focusSessions} onSessionsChange={setFocusSessions} />
+            )}
+            {currentView === "goals" && (
+              <GoalsView goals={goals} setGoals={setGoals} />
             )}
             {currentView === "weather" && <WeatherView />}
           </div>
         </main>
       </div>
+
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        onNavigate={(v) => {
+          setView(v);
+          setCommandPaletteOpen(false);
+        }}
+        onQuickAdd={(type) => {
+          handleQuickAdd(type);
+          setCommandPaletteOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -3,13 +3,14 @@
 import { useRef, useState, useEffect } from "react";
 import {
   CalendarBlank,
-  Check,
   CalendarDot,
   CloudSun,
   Lightning,
   Notepad,
   Timer,
   CheckSquare,
+  Target,
+  Command,
 } from "@phosphor-icons/react";
 import type { ViewType } from "../types";
 
@@ -20,30 +21,33 @@ export const DEFAULT_NAV_ORDER: ViewType[] = [
   "habits",
   "notes",
   "focus",
+  "goals",
   "weather",
 ];
 
 interface NavSection {
+  label: string;
   items: ViewType[];
 }
 
 const NAV_META: Record<
   ViewType,
-  { label: string; icon: typeof CalendarDot }
+  { label: string; icon: typeof CalendarDot; accent?: string }
 > = {
-  today: { label: "Today", icon: CalendarDot },
-  calendar: { label: "Calendar", icon: CalendarBlank },
-  tasks: { label: "Tasks", icon: CheckSquare },
-  habits: { label: "Habits", icon: Lightning },
-  notes: { label: "Notes", icon: Notepad },
-  focus: { label: "Focus", icon: Timer },
-  weather: { label: "Weather", icon: CloudSun },
+  today: { label: "Today", icon: CalendarDot, accent: "#528BFF" },
+  calendar: { label: "Calendar", icon: CalendarBlank, accent: "#528BFF" },
+  tasks: { label: "Tasks", icon: CheckSquare, accent: "#528BFF" },
+  habits: { label: "Habits", icon: Lightning, accent: "#34D399" },
+  notes: { label: "Notes", icon: Notepad, accent: "#A78BFA" },
+  focus: { label: "Focus", icon: Timer, accent: "#F59E0B" },
+  goals: { label: "Goals", icon: Target, accent: "#F472B6" },
+  weather: { label: "Weather", icon: CloudSun, accent: "#14B8A6" },
 };
 
 const SECTIONS: NavSection[] = [
-  { items: ["today", "calendar", "tasks"] },
-  { items: ["habits", "notes", "focus"] },
-  { items: ["weather"] },
+  { label: "Overview", items: ["today", "calendar", "tasks"] },
+  { label: "Growth", items: ["habits", "notes", "focus", "goals"] },
+  { label: "Live", items: ["weather"] },
 ];
 
 interface SidebarProps {
@@ -52,6 +56,7 @@ interface SidebarProps {
   navOrder: ViewType[];
   onNavOrderChange: (order: ViewType[]) => void;
   isWeather?: boolean;
+  onCommandPalette?: () => void;
 }
 
 export default function Sidebar({
@@ -60,6 +65,7 @@ export default function Sidebar({
   navOrder,
   onNavOrderChange,
   isWeather = false,
+  onCommandPalette,
 }: SidebarProps) {
   const today = new Date();
   const navRef = useRef<HTMLElement>(null);
@@ -72,7 +78,6 @@ export default function Sidebar({
   const [overIdx, setOverIdx] = useState<number | null>(null);
   const dragNode = useRef<HTMLButtonElement | null>(null);
 
-  // Measure active button position for sliding indicator
   useEffect(() => {
     const updateIndicator = () => {
       if (!navRef.current) return;
@@ -90,12 +95,10 @@ export default function Sidebar({
       }
     };
     updateIndicator();
-    // Also update on resize
     window.addEventListener("resize", updateIndicator);
     return () => window.removeEventListener("resize", updateIndicator);
   }, [currentView, navOrder]);
 
-  /* drag handlers */
   const handleDragStart = (
     idx: number,
     e: React.DragEvent<HTMLButtonElement>
@@ -104,7 +107,7 @@ export default function Sidebar({
     dragNode.current = e.currentTarget;
     e.dataTransfer.effectAllowed = "move";
     requestAnimationFrame(() => {
-      if (dragNode.current) dragNode.current.style.opacity = "0.35";
+      if (dragNode.current) dragNode.current.style.opacity = "0.3";
     });
   };
 
@@ -127,15 +130,14 @@ export default function Sidebar({
     if (overIdx !== idx) setOverIdx(idx);
   };
 
-  // Build ordered items based on sections (respects custom order for items within sections)
   const orderedItems = navOrder;
 
   return (
     <aside
-      className={`w-[220px] h-full flex flex-col border-r select-none shrink-0 transition-colors duration-300 ${
+      className={`w-[228px] h-full flex flex-col border-r select-none shrink-0 transition-colors duration-300 ${
         isWeather
-          ? "border-white/[0.04] bg-black/15"
-          : "border-white/[0.06] bg-black/15"
+          ? "border-white/[0.03] bg-black/20"
+          : "border-white/[0.05] bg-black/12"
       }`}
     >
       {/* Drag area + branding */}
@@ -143,22 +145,43 @@ export default function Sidebar({
         className="h-9 flex items-center px-5 shrink-0"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       >
-        <span className="text-[11px] font-semibold text-white/40 tracking-[0.2em] uppercase">
-          Clarity
-        </span>
+        <div className="flex items-center gap-2">
+          <div className="w-[6px] h-[6px] rounded-full bg-[#528BFF]" />
+          <span className="text-[11px] font-semibold text-white/50 tracking-[0.2em] uppercase">
+            Clarity
+          </span>
+        </div>
+      </div>
+
+      {/* Quick action - Command Palette */}
+      <div className="px-3 mb-1">
+        <button
+          onClick={onCommandPalette}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.08] transition-all duration-200 group"
+        >
+          <Command size={13} weight="light" className="text-white/25 group-hover:text-white/40 transition-colors" />
+          <span className="text-[11px] text-white/25 group-hover:text-white/35 transition-colors flex-1 text-left">
+            Quick actions
+          </span>
+          <kbd className="text-[9px] text-white/15 bg-white/[0.04] px-1.5 py-0.5 rounded font-medium">
+            Ctrl+K
+          </kbd>
+        </button>
       </div>
 
       {/* Navigation */}
-      <nav ref={navRef} className="flex-1 px-3 pt-1 relative">
+      <nav ref={navRef} className="flex-1 px-3 pt-2 relative overflow-y-auto">
         {/* Animated active indicator */}
         <div
-          className="absolute left-3 right-3 rounded-lg bg-white/[0.07] pointer-events-none z-0"
+          className="absolute left-3 right-3 rounded-xl pointer-events-none z-0"
           style={{
             top: indicatorStyle.top,
             height: indicatorStyle.height,
             opacity: indicatorStyle.opacity,
+            background: "rgba(255, 255, 255, 0.055)",
+            border: "1px solid rgba(255, 255, 255, 0.05)",
             transition:
-              "top 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.2s ease, opacity 0.15s ease",
+              "top 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s ease, opacity 0.15s ease",
           }}
         />
 
@@ -169,7 +192,6 @@ export default function Sidebar({
           const isDropTarget =
             overIdx === idx && dragIdx !== null && dragIdx !== idx;
 
-          // Add section separator
           const showSeparator =
             idx > 0 &&
             SECTIONS.some(
@@ -178,10 +200,20 @@ export default function Sidebar({
                 !s.items.includes(orderedItems[idx - 1])
             );
 
+          const section = showSeparator
+            ? SECTIONS.find((s) => s.items[0] === id)
+            : null;
+
           return (
             <div key={id}>
               {showSeparator && (
-                <div className="my-1.5 mx-2 h-px bg-white/[0.04]" />
+                <div className="mt-3 mb-1.5 px-3">
+                  {section && (
+                    <span className="text-[9px] font-semibold text-white/15 uppercase tracking-[0.15em]">
+                      {section.label}
+                    </span>
+                  )}
+                </div>
               )}
               <button
                 data-view={id}
@@ -192,27 +224,26 @@ export default function Sidebar({
                 onDragEnter={(e) => e.preventDefault()}
                 onClick={() => onViewChange(id)}
                 className={`
-                  relative z-[1] w-full flex items-center gap-3 px-3 py-[7px] rounded-lg
+                  relative z-[1] w-full flex items-center gap-3 px-3 py-[8px] rounded-xl
                   text-[13px] cursor-grab active:cursor-grabbing
-                  transition-colors duration-150
-                  ${
-                    active
-                      ? "text-white/90"
-                      : "text-white/40 hover:text-white/60"
-                  }
-                  ${
-                    isDropTarget
-                      ? "border-t border-blue-400/40"
-                      : "border-t border-transparent"
-                  }
+                  transition-all duration-200
+                  ${active ? "text-white/90" : "text-white/35 hover:text-white/55"}
+                  ${isDropTarget ? "border-t border-blue-400/30" : "border-t border-transparent"}
                 `}
               >
                 <meta.icon
                   size={17}
                   weight={active ? "regular" : "light"}
                   className="transition-all duration-200"
+                  style={active ? { color: meta.accent } : undefined}
                 />
                 <span className="font-medium">{meta.label}</span>
+                {active && (
+                  <div
+                    className="ml-auto w-1 h-1 rounded-full"
+                    style={{ background: meta.accent }}
+                  />
+                )}
               </button>
             </div>
           );
@@ -220,12 +251,14 @@ export default function Sidebar({
       </nav>
 
       {/* Footer date */}
-      <div className="px-5 py-4 text-[11px] text-white/20">
-        {today.toLocaleDateString("en-US", {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-        })}
+      <div className="px-5 py-4 border-t border-white/[0.04]">
+        <p className="text-[10px] text-white/20 font-medium">
+          {today.toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+          })}
+        </p>
       </div>
     </aside>
   );

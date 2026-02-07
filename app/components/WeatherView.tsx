@@ -363,6 +363,17 @@ export default function WeatherView() {
         style={{ zIndex: -1 }}
       />
 
+      {/* ── dark overlay while loading ──────────────── */}
+      <div
+        className="fixed inset-0 w-screen h-screen pointer-events-none"
+        style={{
+          zIndex: 0,
+          background: "#0a0a0f",
+          opacity: data ? 0 : 1,
+          transition: "opacity 800ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      />
+
       {/* ── scrollable content over sky ──────────────── */}
       <div className="relative h-full overflow-y-auto">
         <div className="max-w-[680px] mx-auto px-4 py-3 space-y-4">

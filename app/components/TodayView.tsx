@@ -12,14 +12,19 @@ import {
   Sun,
   Moon,
   TrendUp,
+  Fire,
+  Target,
+  Sparkle,
 } from "@phosphor-icons/react";
-import type { CalendarEvent, Task, Habit, FocusSession, ViewType } from "../types";
+import type { CalendarEvent, Task, Habit, FocusSession, Goal, ViewType } from "../types";
+import { getHabitIcon } from "./HabitsView";
 
 interface Props {
   events: CalendarEvent[];
   tasks: Task[];
   habits: Habit[];
   focusSessions: FocusSession[];
+  goals: Goal[];
   onTasksChange: (tasks: Task[]) => void;
   onNavigate: (view: ViewType) => void;
 }
@@ -36,8 +41,8 @@ function getGreeting() {
 function getGreetingIcon() {
   const h = new Date().getHours();
   if (h >= 6 && h < 20)
-    return <Sun size={14} weight="light" className="text-amber-400/60" />;
-  return <Moon size={14} weight="light" className="text-indigo-400/60" />;
+    return <Sun size={16} weight="light" className="text-amber-400/70" />;
+  return <Moon size={16} weight="light" className="text-indigo-400/70" />;
 }
 
 function todayStr() {
@@ -49,8 +54,8 @@ function todayStr() {
 
 function ProgressRing({
   progress,
-  size = 52,
-  strokeWidth = 3.5,
+  size = 44,
+  strokeWidth = 2.5,
   color = "#528BFF",
   children,
 }: {
@@ -102,6 +107,30 @@ function ProgressRing({
   );
 }
 
+/* ── Productivity Score ──────────────────────────── */
+
+function getProductivityScore(
+  taskProgress: number,
+  habitProgress: number,
+  focusMinutes: number,
+  goalProgress: number
+): number {
+  const taskScore = taskProgress * 30;
+  const habitScore = habitProgress * 30;
+  const focusScore = Math.min(focusMinutes / 120, 1) * 25;
+  const goalScore = goalProgress * 15;
+  return Math.round(taskScore + habitScore + focusScore + goalScore);
+}
+
+function getScoreLabel(score: number): string {
+  if (score >= 90) return "Outstanding";
+  if (score >= 75) return "Excellent";
+  if (score >= 60) return "Great";
+  if (score >= 40) return "Good start";
+  if (score >= 20) return "Getting going";
+  return "Ready to start";
+}
+
 /* ── Main Component ──────────────────────────────── */
 
 export default function TodayView({
@@ -109,6 +138,7 @@ export default function TodayView({
   tasks,
   habits,
   focusSessions,
+  goals,
   onTasksChange,
   onNavigate,
 }: Props) {
@@ -153,132 +183,170 @@ export default function TodayView({
       ? 1
       : 0;
 
+  const activeGoals = goals.filter((g) => g.progress < 100);
+  const goalProgress = goals.length > 0
+    ? goals.reduce((acc, g) => acc + g.progress, 0) / (goals.length * 100)
+    : 0;
+
+  const productivityScore = getProductivityScore(
+    taskProgress,
+    habitProgress,
+    focusMinutes,
+    goalProgress
+  );
+
   const toggleTask = (id: string) =>
     onTasksChange(
       tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
     );
 
-  // Get current time position for the timeline indicator
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
 
   return (
     <div className="h-full overflow-y-auto p-6 animate-viewEnter">
-      {/* Greeting */}
-      <div
-        className="mb-8 stagger-item"
-        style={{ "--i": 0 } as React.CSSProperties}
-      >
-        <div className="flex items-center gap-2 mb-1.5">
-          {getGreetingIcon()}
-          <p className="text-[13px] text-white/35">{getGreeting()}</p>
+      {/* Greeting + Productivity Score */}
+      <div className="flex items-start justify-between mb-8 stagger-item" style={{ "--i": 0 } as React.CSSProperties}>
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            {getGreetingIcon()}
+            <p className="text-[13px] text-white/35">{getGreeting()}</p>
+          </div>
+          <h1 className="text-2xl font-semibold text-gradient">
+            {now.toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
+          </h1>
         </div>
-        <h1 className="text-2xl font-semibold text-white/90">
-          {now.toLocaleDateString("en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })}
-        </h1>
+
+        {/* Productivity Score */}
+        <div className="flex items-center gap-4 glass-card px-5 py-3.5">
+          <ProgressRing
+            progress={productivityScore / 100}
+            size={48}
+            strokeWidth={3}
+            color={productivityScore >= 60 ? "#34D399" : productivityScore >= 30 ? "#F59E0B" : "#528BFF"}
+          >
+            <Sparkle size={16} weight="fill" className="text-white/40" />
+          </ProgressRing>
+          <div>
+            <p className="text-[22px] font-semibold text-white/90 tabular-nums leading-none stat-number">
+              {productivityScore}
+            </p>
+            <p className="text-[11px] text-white/30 mt-1">{getScoreLabel(productivityScore)}</p>
+          </div>
+        </div>
       </div>
 
       {/* Stats row */}
       <div
-        className="grid grid-cols-3 gap-4 mb-8 stagger-item"
+        className="grid grid-cols-4 gap-3 mb-8 stagger-item"
         style={{ "--i": 1 } as React.CSSProperties}
       >
         {/* Tasks stat */}
         <button
           onClick={() => onNavigate("tasks")}
-          className="group flex items-center gap-5 p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-200"
+          className="group flex items-center gap-4 p-4 glass-card press-effect"
         >
-          <ProgressRing progress={taskProgress} color="#528BFF" size={52} strokeWidth={3}>
-            <CheckCircle size={20} weight="light" className="text-blue-400/70" />
+          <ProgressRing progress={taskProgress} color="#528BFF" size={44} strokeWidth={2.5}>
+            <CheckCircle size={17} weight="light" className="text-blue-400/70" />
           </ProgressRing>
           <div className="text-left min-w-0">
-            <p className="text-[26px] font-semibold text-white/85 tabular-nums leading-none">
+            <p className="text-[22px] font-semibold text-white/85 tabular-nums leading-none stat-number">
               {todayTasks.length + overdueTasks.length}
             </p>
-            <p className="text-[12px] text-white/30 mt-1.5">Tasks due</p>
+            <p className="text-[11px] text-white/30 mt-1">Tasks due</p>
           </div>
         </button>
 
         {/* Habits stat */}
         <button
           onClick={() => onNavigate("habits")}
-          className="group flex items-center gap-5 p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-200"
+          className="group flex items-center gap-4 p-4 glass-card press-effect"
         >
-          <ProgressRing progress={habitProgress} color="#34D399" size={52} strokeWidth={3}>
-            <Lightning size={20} weight="light" className="text-green-400/70" />
+          <ProgressRing progress={habitProgress} color="#34D399" size={44} strokeWidth={2.5}>
+            <Lightning size={17} weight="light" className="text-green-400/70" />
           </ProgressRing>
           <div className="text-left min-w-0">
-            <p className="text-[26px] font-semibold text-white/85 tabular-nums leading-none">
+            <p className="text-[22px] font-semibold text-white/85 tabular-nums leading-none stat-number">
               {habitsCompletedToday}
-              <span className="text-[14px] text-white/25 font-normal">
+              <span className="text-[13px] text-white/20 font-normal">
                 /{totalHabits}
               </span>
             </p>
-            <p className="text-[12px] text-white/30 mt-1.5">Habits done</p>
+            <p className="text-[11px] text-white/30 mt-1">Habits</p>
           </div>
         </button>
 
         {/* Focus stat */}
         <button
           onClick={() => onNavigate("focus")}
-          className="group flex items-center gap-5 p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-200"
+          className="group flex items-center gap-4 p-4 glass-card press-effect"
         >
           <ProgressRing
             progress={Math.min(focusMinutes / 120, 1)}
             color="#A78BFA"
-            size={52}
-            strokeWidth={3}
+            size={44}
+            strokeWidth={2.5}
           >
-            <Timer size={20} weight="light" className="text-purple-400/70" />
+            <Timer size={17} weight="light" className="text-purple-400/70" />
           </ProgressRing>
           <div className="text-left min-w-0">
-            <p className="text-[26px] font-semibold text-white/85 tabular-nums leading-none">
+            <p className="text-[22px] font-semibold text-white/85 tabular-nums leading-none stat-number">
               {focusMinutes}
-              <span className="text-[14px] text-white/25 font-normal">m</span>
+              <span className="text-[13px] text-white/20 font-normal">m</span>
             </p>
-            <p className="text-[12px] text-white/30 mt-1.5">Focus time</p>
+            <p className="text-[11px] text-white/30 mt-1">Focus</p>
+          </div>
+        </button>
+
+        {/* Goals stat */}
+        <button
+          onClick={() => onNavigate("goals")}
+          className="group flex items-center gap-4 p-4 glass-card press-effect"
+        >
+          <ProgressRing progress={goalProgress} color="#F472B6" size={44} strokeWidth={2.5}>
+            <Target size={17} weight="light" className="text-pink-400/70" />
+          </ProgressRing>
+          <div className="text-left min-w-0">
+            <p className="text-[22px] font-semibold text-white/85 tabular-nums leading-none stat-number">
+              {activeGoals.length}
+            </p>
+            <p className="text-[11px] text-white/30 mt-1">Goals</p>
           </div>
         </button>
       </div>
 
-      {/* Content cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {/* Content cards - 3 columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Schedule card */}
         <div
-          className="rounded-2xl bg-white/[0.025] border border-white/[0.06] overflow-hidden stagger-item"
+          className="glass-card-static overflow-hidden stagger-item"
           style={{ "--i": 2 } as React.CSSProperties}
         >
-          <div className="px-6 py-4 border-b border-white/[0.04] flex items-center gap-2.5">
-            <CalendarBlank
-              size={16}
-              weight="light"
-              className="text-white/30"
-            />
-            <span className="text-[13px] font-medium text-white/55">
-              Schedule
-            </span>
-            <span className="ml-auto text-[11px] text-white/20 tabular-nums">
+          <div className="px-5 py-4 border-b border-white/[0.04] flex items-center gap-2.5">
+            <CalendarBlank size={15} weight="light" className="text-blue-400/50" />
+            <span className="text-[12px] font-medium text-white/50">Schedule</span>
+            <span className="ml-auto text-[10px] text-white/20 tabular-nums">
               {todayEvents.length} event{todayEvents.length !== 1 ? "s" : ""}
             </span>
             <button
               onClick={() => onNavigate("calendar")}
               className="ml-1 p-1 rounded-lg hover:bg-white/[0.06] text-white/20 hover:text-white/40 transition-all"
             >
-              <ArrowRight size={13} weight="light" />
+              <ArrowRight size={12} weight="light" />
             </button>
           </div>
-          <div className="p-5">
+          <div className="p-4">
             {todayEvents.length === 0 ? (
-              <p className="text-[12px] text-white/15 text-center py-8">
+              <p className="text-[12px] text-white/15 text-center py-6">
                 No events scheduled
               </p>
             ) : (
               <div className="space-y-1">
-                {todayEvents.slice(0, 6).map((ev, i) => {
+                {todayEvents.slice(0, 5).map((ev, i) => {
                   const isNow =
                     ev.startTime <=
                       `${String(currentHour).padStart(2, "0")}:${String(currentMinute).padStart(2, "0")}` &&
@@ -288,28 +356,26 @@ export default function TodayView({
                   return (
                     <div
                       key={ev.id}
-                      className={`flex items-start gap-3 p-2.5 rounded-lg transition-all duration-200 stagger-item-fast ${
-                        isNow
-                          ? "bg-white/[0.04]"
-                          : "hover:bg-white/[0.025]"
+                      className={`flex items-start gap-3 p-2.5 rounded-xl transition-all duration-200 stagger-item-fast ${
+                        isNow ? "bg-white/[0.04]" : "hover:bg-white/[0.025]"
                       }`}
                       style={{ "--i": i } as React.CSSProperties}
                     >
                       <div
-                        className="w-[3px] shrink-0 self-stretch rounded-full min-h-[32px]"
+                        className="w-[3px] shrink-0 self-stretch rounded-full min-h-[28px]"
                         style={{ background: ev.color }}
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13px] text-white/80 font-medium truncate">
+                        <p className="text-[12px] text-white/80 font-medium truncate">
                           {ev.title}
                         </p>
-                        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-white/30">
-                          <Clock size={10} weight="light" />
+                        <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-white/30">
+                          <Clock size={9} weight="light" />
                           <span className="tabular-nums">
                             {ev.startTime} — {ev.endTime}
                           </span>
                           {isNow && (
-                            <span className="text-[9px] text-blue-400/70 font-medium ml-1">
+                            <span className="text-[9px] text-blue-400/80 font-semibold ml-1 badge bg-blue-500/10">
                               NOW
                             </span>
                           )}
@@ -318,12 +384,12 @@ export default function TodayView({
                     </div>
                   );
                 })}
-                {todayEvents.length > 6 && (
+                {todayEvents.length > 5 && (
                   <button
                     onClick={() => onNavigate("calendar")}
                     className="text-[11px] text-white/25 hover:text-white/40 transition-colors px-2 py-1"
                   >
-                    +{todayEvents.length - 6} more events
+                    +{todayEvents.length - 5} more
                   </button>
                 )}
               </div>
@@ -333,77 +399,130 @@ export default function TodayView({
 
         {/* Tasks card */}
         <div
-          className="rounded-2xl bg-white/[0.025] border border-white/[0.06] overflow-hidden stagger-item"
+          className="glass-card-static overflow-hidden stagger-item"
           style={{ "--i": 3 } as React.CSSProperties}
         >
-          <div className="px-6 py-4 border-b border-white/[0.04] flex items-center gap-2.5">
-            <CheckCircle
-              size={16}
-              weight="light"
-              className="text-white/30"
-            />
-            <span className="text-[13px] font-medium text-white/55">
-              Tasks
-            </span>
-            <span className="ml-auto text-[11px] text-white/20 tabular-nums">
+          <div className="px-5 py-4 border-b border-white/[0.04] flex items-center gap-2.5">
+            <CheckCircle size={15} weight="light" className="text-blue-400/50" />
+            <span className="text-[12px] font-medium text-white/50">Tasks</span>
+            <span className="ml-auto text-[10px] text-white/20 tabular-nums">
               {pendingTasks.length} pending
             </span>
             <button
               onClick={() => onNavigate("tasks")}
               className="ml-1 p-1 rounded-lg hover:bg-white/[0.06] text-white/20 hover:text-white/40 transition-all"
             >
-              <ArrowRight size={13} weight="light" />
+              <ArrowRight size={12} weight="light" />
             </button>
           </div>
           <div className="p-4">
             {[...overdueTasks, ...todayTasks].length === 0 ? (
-              <div className="text-center py-8">
-                <TrendUp
-                  size={20}
-                  weight="light"
-                  className="text-green-400/30 mx-auto mb-2"
-                />
+              <div className="text-center py-6">
+                <TrendUp size={18} weight="light" className="text-green-400/30 mx-auto mb-2" />
                 <p className="text-[12px] text-white/20">All caught up!</p>
               </div>
             ) : (
               <div className="space-y-0.5">
                 {[...overdueTasks, ...todayTasks]
-                  .slice(0, 7)
+                  .slice(0, 6)
                   .map((task, i) => {
-                    const isOverdue = !!(
-                      task.dueDate && task.dueDate < today
-                    );
+                    const isOverdue = !!(task.dueDate && task.dueDate < today);
                     return (
                       <div
                         key={task.id}
-                        className="flex items-center gap-3 px-2.5 py-2 rounded-lg hover:bg-white/[0.03] transition-all duration-200 stagger-item-fast"
+                        className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/[0.03] transition-all duration-200 stagger-item-fast"
                         style={{ "--i": i } as React.CSSProperties}
                       >
                         <button
                           onClick={() => toggleTask(task.id)}
                           className="text-white/20 hover:text-blue-400 transition-all duration-200 shrink-0 hover:scale-110"
                         >
-                          <Circle size={16} weight="light" />
+                          <Circle size={15} weight="light" />
                         </button>
-                        <span className="flex-1 text-[13px] text-white/65 truncate">
+                        <span className="flex-1 text-[12px] text-white/60 truncate">
                           {task.title}
                         </span>
                         {task.priority === "high" && (
                           <span className="w-1.5 h-1.5 rounded-full bg-red-400/60 shrink-0" />
                         )}
                         {isOverdue && (
-                          <span className="text-[10px] text-red-400/60 shrink-0">
+                          <span className="text-[9px] text-red-400/70 shrink-0 badge bg-red-500/10">
                             overdue
-                          </span>
-                        )}
-                        {task.dueDate === today && !isOverdue && (
-                          <span className="text-[10px] text-blue-400/50 shrink-0">
-                            today
                           </span>
                         )}
                       </div>
                     );
                   })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Habits + Goals card */}
+        <div
+          className="glass-card-static overflow-hidden stagger-item"
+          style={{ "--i": 4 } as React.CSSProperties}
+        >
+          <div className="px-5 py-4 border-b border-white/[0.04] flex items-center gap-2.5">
+            <Lightning size={15} weight="light" className="text-green-400/50" />
+            <span className="text-[12px] font-medium text-white/50">Habits & Goals</span>
+            <button
+              onClick={() => onNavigate("habits")}
+              className="ml-auto p-1 rounded-lg hover:bg-white/[0.06] text-white/20 hover:text-white/40 transition-all"
+            >
+              <ArrowRight size={12} weight="light" />
+            </button>
+          </div>
+          <div className="p-4">
+            {habits.length === 0 && activeGoals.length === 0 ? (
+              <div className="text-center py-6">
+                <Fire size={18} weight="light" className="text-orange-400/30 mx-auto mb-2" />
+                <p className="text-[12px] text-white/20">No habits or goals yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {habits.slice(0, 4).map((habit, i) => {
+                  const completed = habit.completedDates.includes(today);
+                  return (
+                    <div
+                      key={habit.id}
+                      className="flex items-center gap-2.5 stagger-item-fast"
+                      style={{ "--i": i } as React.CSSProperties}
+                    >
+                      {(() => { const HIcon = getHabitIcon(habit.emoji); return <HIcon size={16} weight="light" style={{ color: habit.color }} />; })()}
+                      <span className={`flex-1 text-[12px] truncate ${completed ? "text-white/50 line-through" : "text-white/60"}`}>
+                        {habit.name}
+                      </span>
+                      {completed ? (
+                        <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: habit.color + "25" }}>
+                          <div className="w-1.5 h-1.5 rounded-full" style={{ background: habit.color }} />
+                        </div>
+                      ) : (
+                        <div className="w-4 h-4 rounded-full bg-white/[0.06]" />
+                      )}
+                    </div>
+                  );
+                })}
+                {activeGoals.length > 0 && (
+                  <>
+                    <div className="h-px bg-white/[0.04] my-1" />
+                    {activeGoals.slice(0, 2).map((goal, i) => (
+                      <div key={goal.id} className="stagger-item-fast" style={{ "--i": habits.length + i } as React.CSSProperties}>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Target size={11} weight="light" className="text-pink-400/50" />
+                          <span className="text-[11px] text-white/55 font-medium truncate flex-1">{goal.title}</span>
+                          <span className="text-[10px] text-white/25 tabular-nums">{goal.progress}%</span>
+                        </div>
+                        <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${goal.progress}%`, background: goal.color }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </div>

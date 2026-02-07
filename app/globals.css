@@ -2,11 +2,18 @@
 
 :root {
   color-scheme: dark;
+  --accent: #528BFF;
+  --accent-soft: rgba(82, 139, 255, 0.12);
+  --glass: rgba(255, 255, 255, 0.035);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-hover: rgba(255, 255, 255, 0.06);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }
 
 html,
@@ -19,51 +26,63 @@ body {
   background: transparent !important;
   color: rgba(255, 255, 255, 0.9);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* form elements — transparent for Mica */
-input,
-textarea,
-select {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 9999px !important;
-  color: rgba(255, 255, 255, 0.85);
-  outline: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
-}
-textarea {
-  border-radius: 16px !important;
-}
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: rgba(96, 165, 250, 0.4);
-  box-shadow: 0 0 0 2px rgba(82, 139, 255, 0.08);
-}
-input::placeholder,
-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* date / time picker icons */
 input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(0.5);
+}
+
+/* ── Glass Card System ───────────────────────────────── */
+
+.glass-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  backdrop-filter: blur(2px);
+  transition: all 0.3s var(--ease-out-expo);
+}
+
+.glass-card:hover {
+  background: var(--glass-hover);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.glass-card-static {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  backdrop-filter: blur(2px);
+}
+
+.glass-card-accent {
+  background: rgba(82, 139, 255, 0.04);
+  border: 1px solid rgba(82, 139, 255, 0.08);
+  border-radius: 20px;
+  transition: all 0.3s var(--ease-out-expo);
+}
+
+.glass-card-accent:hover {
+  background: rgba(82, 139, 255, 0.07);
+  border-color: rgba(82, 139, 255, 0.14);
 }
 
 /* ── Animation Keyframes ─────────────────────────────── */
@@ -74,23 +93,39 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-10px); max-height: 0; }
+  to { opacity: 1; transform: translateY(0); max-height: 600px; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
+  from { opacity: 0; transform: scale(0.92); }
   to { opacity: 1; transform: scale(1); }
 }
 
+@keyframes scaleInBounce {
+  0% { opacity: 0; transform: scale(0.85); }
+  60% { opacity: 1; transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
 @keyframes viewEnter {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(8px) scale(0.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes progressFill {
@@ -98,14 +133,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 @keyframes checkPop {
-  0% { transform: scale(0.7); opacity: 0; }
-  60% { transform: scale(1.15); }
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.2); }
+  80% { transform: scale(0.95); }
   100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes ringPulse {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.05); }
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.06); }
 }
 
 @keyframes shimmer {
@@ -114,60 +150,109 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 @keyframes countUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes expandHeight {
-  from { opacity: 0; max-height: 0; }
+  from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
   to { opacity: 1; max-height: 500px; }
 }
 
 @keyframes breathe {
   0%, 100% { box-shadow: 0 0 0 0 rgba(82, 139, 255, 0); }
-  50% { box-shadow: 0 0 0 8px rgba(82, 139, 255, 0.06); }
+  50% { box-shadow: 0 0 0 12px rgba(82, 139, 255, 0.04); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--glow-color, rgba(82, 139, 255, 0.15)); }
+  50% { box-shadow: 0 0 20px 4px var(--glow-color, rgba(82, 139, 255, 0.08)); }
+}
+
+@keyframes subtleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes completionRipple {
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; backdrop-filter: blur(0); }
+  to { opacity: 1; backdrop-filter: blur(12px); }
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes numberTick {
+  0% { opacity: 0; transform: translateY(100%); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes strokeDraw {
+  from { stroke-dashoffset: var(--path-length, 100); }
+  to { stroke-dashoffset: 0; }
 }
 
 /* ── Animation Utility Classes ───────────────────────── */
 
 .animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.35s var(--ease-out-expo);
 }
 
 .animate-slideUp {
-  animation: slideUp 0.35s ease-out;
+  animation: slideUp 0.4s var(--ease-out-expo);
 }
 
 .animate-slideDown {
-  animation: slideDown 0.3s ease-out;
+  animation: slideDown 0.35s var(--ease-out-expo);
+  overflow: hidden;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.4s var(--ease-out-expo);
 }
 
 .animate-scaleIn {
-  animation: scaleIn 0.25s ease-out;
+  animation: scaleIn 0.3s var(--ease-out-expo);
+}
+
+.animate-scaleInBounce {
+  animation: scaleInBounce 0.4s var(--spring);
 }
 
 .animate-viewEnter {
-  animation: viewEnter 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: viewEnter 0.45s var(--ease-out-expo);
 }
 
 .animate-checkPop {
-  animation: checkPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: checkPop 0.4s var(--spring);
 }
 
 /* Staggered list animations */
 .stagger-item {
-  animation: slideUp 0.4s ease-out backwards;
-  animation-delay: calc(var(--i, 0) * 40ms);
+  animation: slideUp 0.45s var(--ease-out-expo) backwards;
+  animation-delay: calc(var(--i, 0) * 50ms);
 }
 
 .stagger-item-fast {
-  animation: slideUp 0.3s ease-out backwards;
-  animation-delay: calc(var(--i, 0) * 25ms);
+  animation: slideUp 0.35s var(--ease-out-expo) backwards;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+.stagger-scale {
+  animation: scaleInBounce 0.4s var(--spring) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
 }
 
 /* Progress ring */
 .progress-ring-circle {
-  animation: progressFill 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: progressFill 1.4s var(--ease-out-expo) forwards;
 }
 
 /* Focus timer breathing ring */
@@ -175,26 +260,98 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   animation: breathe 4s ease-in-out infinite;
 }
 
+/* Pulse glow effect */
+.pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* Subtle floating */
+.animate-float {
+  animation: subtleFloat 3s ease-in-out infinite;
+}
+
+/* Completion ripple */
+.completion-ripple {
+  animation: completionRipple 0.6s var(--ease-out-expo) forwards;
+}
+
+/* Overlay / modal */
+.animate-overlay {
+  animation: overlayIn 0.25s var(--ease-out-expo);
+}
+
+.animate-modal {
+  animation: modalIn 0.3s var(--spring);
+}
+
+/* Number counter */
+.animate-number {
+  animation: numberTick 0.5s var(--spring);
+}
+
 /* Smooth spring transitions */
 .transition-spring {
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.35s var(--spring);
+}
+
+/* Smooth expo transitions */
+.transition-expo {
+  transition: all 0.35s var(--ease-out-expo);
 }
 
 /* Card hover lift */
 .card-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: transform 0.3s var(--ease-out-expo), box-shadow 0.3s var(--ease-out-expo), background 0.2s ease, border-color 0.2s ease;
 }
 .card-hover:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+/* Interactive press */
+.press-effect {
+  transition: transform 0.15s ease;
+}
+.press-effect:active {
+  transform: scale(0.97);
 }
 
 /* Expand animation for forms/panels */
 .animate-expand {
-  animation: expandHeight 0.3s ease-out;
+  animation: expandHeight 0.35s var(--ease-out-expo);
   overflow: hidden;
 }
 
 /* scrollbar hidden */
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { scrollbar-width: none; }
+
+/* Subtle text gradient */
+.text-gradient {
+  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.7));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effect on focus */
+.focus-glow:focus-within {
+  box-shadow: 0 0 0 3px rgba(82, 139, 255, 0.08), 0 0 16px rgba(82, 139, 255, 0.04);
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Stat card number animation */
+.stat-number {
+  font-variant-numeric: tabular-nums;
+  animation: countUp 0.6s var(--ease-out-expo);
+}

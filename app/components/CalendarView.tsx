@@ -275,13 +275,14 @@ export default function CalendarView({ events, onEventsChange }: Props) {
             </div>
             <button
               onClick={() => setAdding(!adding)}
-              className={`p-1 rounded-md transition-all ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-all duration-200 press-effect ${
                 adding
-                  ? "bg-white/[0.08] text-white"
-                  : "text-white/30 hover:text-white/60 hover:bg-white/[0.05]"
+                  ? "bg-white/[0.08] text-white/60"
+                  : "bg-[#528BFF]/15 text-[#528BFF] hover:bg-[#528BFF]/25"
               }`}
             >
               {adding ? <X size={14} weight="light" /> : <Plus size={14} weight="light" />}
+              {adding ? "Cancel" : "New Event"}
             </button>
           </div>
 
@@ -294,7 +295,7 @@ export default function CalendarView({ events, onEventsChange }: Props) {
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 onKeyDown={(e) => e.key === "Enter" && addEvent()}
-                className="w-full px-2.5 py-1.5 text-[12px] rounded-full bg-white/[0.05] border border-white/[0.08] text-white/90 placeholder:text-white/25 outline-none focus:border-white/[0.15] transition-colors"
+                className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/8 text-[13px] text-white/90 placeholder:text-white/25 outline-none focus:border-[#528BFF]/60 focus:ring-1 focus:ring-[#528BFF]/40 transition-colors"
                 autoFocus
               />
               <div className="flex gap-1.5 items-center">
@@ -302,14 +303,14 @@ export default function CalendarView({ events, onEventsChange }: Props) {
                   type="time"
                   value={form.startTime}
                   onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                  className="flex-1 px-2 py-1 text-[11px] rounded-full bg-white/[0.05] border border-white/[0.08] text-white/70 outline-none focus:border-white/[0.15]"
+                  className="flex-1 px-3 py-2 text-[13px] rounded-xl bg-white/5 border border-white/8 text-white/70 outline-none focus:border-[#528BFF]/60 focus:ring-1 focus:ring-[#528BFF]/40 transition-colors"
                 />
                 <span className="text-[10px] text-white/20">→</span>
                 <input
                   type="time"
                   value={form.endTime}
                   onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                  className="flex-1 px-2 py-1 text-[11px] rounded-full bg-white/[0.05] border border-white/[0.08] text-white/70 outline-none focus:border-white/[0.15]"
+                  className="flex-1 px-3 py-2 text-[13px] rounded-xl bg-white/5 border border-white/8 text-white/70 outline-none focus:border-[#528BFF]/60 focus:ring-1 focus:ring-[#528BFF]/40 transition-colors"
                 />
               </div>
               <div className="flex gap-1 items-center">
