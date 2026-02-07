@@ -44,7 +44,7 @@ function createWindow() {
 
     frame: false,
     titleBarStyle: "hidden",
-    backgroundMaterial: "acrylic", // Mica-like blur+transparency
+    backgroundMaterial: "mica", // Mica-like blur+transparency
     backgroundColor: "#00000000", // required for Mica to render
 
     show: false,

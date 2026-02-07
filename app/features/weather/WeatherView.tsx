@@ -108,6 +108,35 @@ function WeatherIcon({
   }
 }
 
+/* ── absolute-temperature → colour (Apple-style) ────── */
+
+const TEMP_STOPS: [number, [number, number, number]][] = [
+  [-30, [40, 60, 150]],
+  [-20, [60, 100, 190]],
+  [-10, [80, 150, 225]],
+  [0,   [125, 211, 252]],
+  [10,  [74, 222, 128]],
+  [20,  [250, 204, 21]],
+  [30,  [251, 146, 60]],
+  [40,  [239, 68, 68]],
+  [50,  [180, 30, 30]],
+];
+
+function tempToColor(t: number): string {
+  if (t <= TEMP_STOPS[0][0]) return `rgb(${TEMP_STOPS[0][1]})`;
+  if (t >= TEMP_STOPS[TEMP_STOPS.length - 1][0])
+    return `rgb(${TEMP_STOPS[TEMP_STOPS.length - 1][1]})`;
+  for (let i = 0; i < TEMP_STOPS.length - 1; i++) {
+    const [t0, c0] = TEMP_STOPS[i];
+    const [t1, c1] = TEMP_STOPS[i + 1];
+    if (t >= t0 && t <= t1) {
+      const f = (t - t0) / (t1 - t0);
+      return `rgb(${Math.round(c0[0] + f * (c1[0] - c0[0]))},${Math.round(c0[1] + f * (c1[1] - c0[1]))},${Math.round(c0[2] + f * (c1[2] - c0[2]))})`;
+    }
+  }
+  return `rgb(${TEMP_STOPS[TEMP_STOPS.length - 1][1]})`;
+}
+
 /* ── WMO → sky weather mapping ───────────────────────── */
 
 function wmoToSkyWeather(code: number, cloudCover: number, windSpeed: number, windDeg: number): SkyStateInput["weather"] {
@@ -546,6 +575,7 @@ export default function WeatherView() {
                         ((d.low - rangeMin) / rangeSpan) * 100;
                       const barRight =
                         100 - ((d.high - rangeMin) / rangeSpan) * 100;
+                      const mid = (d.low + d.high) / 2;
 
                       return (
                         <div
@@ -567,8 +597,7 @@ export default function WeatherView() {
                               style={{
                                 left: `${barLeft}%`,
                                 right: `${barRight}%`,
-                                background:
-                                  "linear-gradient(90deg, #7DD3FC 0%, #4ADE80 40%, #FACC15 65%, #FB923C 85%, #EF4444 100%)",
+                                background: `linear-gradient(90deg, ${tempToColor(d.low)} 0%, ${tempToColor(mid)} 50%, ${tempToColor(d.high)} 100%)`,
                               }}
                             />
                           </div>
