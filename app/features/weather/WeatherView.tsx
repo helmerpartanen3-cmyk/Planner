@@ -408,17 +408,11 @@ export default function WeatherView() {
         <div className="max-w-[680px] mx-auto px-4 py-3 space-y-4">
           {/* ── search ─────────────────────────────────── */}
           <div className="flex justify-center mb-2">
-            <div
-              className={`flex items-center gap-2.5 px-4 py-2 rounded-full transition-all duration-300 w-[260px] backdrop-blur-md ${
-                searchFocused
-                  ? "saturate-130 border border-white/[0.18] shadow-lg"
-                  : "saturate-130 border border-white/[0.08]"
-              }`}
-            >
+            <div className="relative w-[260px] rounded-xl backdrop-blur-lg saturate-130">
               <MagnifyingGlass
-                size={14}
+                size={13}
                 weight="regular"
-                className="text-white shrink-0"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none z-10"
               />
               <input
                 type="text"
@@ -428,7 +422,7 @@ export default function WeatherView() {
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
-                className="flex-1 text-[12px] !bg-transparent !border-none !ring-0 !outline-none text-white placeholder:text-white/70"
+                className="w-full pl-8 pr-3 py-2 rounded-xl bg-transparent border border-white/8 text-[13px] text-white/90 placeholder:text-white/25 outline-none focus:border-[#528BFF]/60 focus:ring-1 focus:ring-[#528BFF]/40 transition-colors"
               />
             </div>
           </div>
