@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import {
   CaretLeft,
   CaretRight,
@@ -14,6 +14,7 @@ import type { CalendarEvent } from "../types";
 /* ── constants ───────────────────────────────────────── */
 
 const DAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAYS_NARROW = ["M", "T", "W", "T", "F", "S", "S"];
 const MONTHS = [
   "January","February","March","April","May","June",
   "July","August","September","October","November","December",
@@ -23,10 +24,11 @@ const MONTHS_SHORT = [
   "Jul","Aug","Sep","Oct","Nov","Dec",
 ];
 const EVENT_COLORS = [
-  "#60a5fa","#34d399","#a78bfa","#fb923c","#f87171","#2dd4bf",
+  "#528BFF","#34D399","#A78BFA","#FB923C","#F87171","#2DD4BF","#FACC15",
 ];
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const HOUR_HEIGHT = 56;
 
 type CalMode = "day" | "week" | "month" | "year";
 
@@ -70,26 +72,87 @@ function addDays(d: Date, n: number) {
   dt.setDate(dt.getDate() + n);
   return dt;
 }
-function sameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-function timeToY(time: string, hourH: number) {
+function timeToY(time: string | undefined) {
+  if (!time) return 0;
   const [h, m] = time.split(":").map(Number);
-  return h * hourH + (m / 60) * hourH;
+  if (isNaN(h) || isNaN(m)) return 0;
+  return h * HOUR_HEIGHT + (m / 60) * HOUR_HEIGHT;
+}
+
+/* ── overlap layout (column-packing) ─────────────────── */
+
+interface LayoutSlot {
+  event: CalendarEvent;
+  col: number;
+  totalCols: number;
+}
+
+function layoutOverlappingEvents(evts: CalendarEvent[]): LayoutSlot[] {
+  if (evts.length === 0) return [];
+
+  const sorted = [...evts].sort((a, b) => {
+    const cmp = (a.startTime || "00:00").localeCompare(b.startTime || "00:00");
+    if (cmp !== 0) return cmp;
+    return (a.endTime || "23:59").localeCompare(b.endTime || "23:59");
+  });
+
+  // group into overlapping clusters
+  const clusters: CalendarEvent[][] = [];
+  let cur: CalendarEvent[] = [];
+  let clusterEnd = 0;
+
+  for (const ev of sorted) {
+    const sY = timeToY(ev.startTime);
+    const eY = Math.max(timeToY(ev.endTime), sY + 20);
+    if (cur.length === 0 || sY < clusterEnd) {
+      cur.push(ev);
+      clusterEnd = Math.max(clusterEnd, eY);
+    } else {
+      clusters.push(cur);
+      cur = [ev];
+      clusterEnd = eY;
+    }
+  }
+  if (cur.length > 0) clusters.push(cur);
+
+  // assign columns within each cluster
+  const result: LayoutSlot[] = [];
+  for (const cluster of clusters) {
+    const colEnds: number[] = []; // track each column's end-Y
+    const assignments: { event: CalendarEvent; col: number }[] = [];
+
+    for (const ev of cluster) {
+      const sY = timeToY(ev.startTime);
+      let col = -1;
+      for (let c = 0; c < colEnds.length; c++) {
+        if (colEnds[c] <= sY) { col = c; break; }
+      }
+      if (col === -1) {
+        col = colEnds.length;
+        colEnds.push(0);
+      }
+      colEnds[col] = Math.max(timeToY(ev.endTime), sY + 20);
+      assignments.push({ event: ev, col });
+    }
+
+    const totalCols = colEnds.length;
+    for (const a of assignments) {
+      result.push({ event: a.event, col: a.col, totalCols });
+    }
+  }
+  return result;
 }
 
 /* ── main component ──────────────────────────────────── */
 
 export default function CalendarView({ events, onEventsChange }: Props) {
   const now = new Date();
-  const [mode, setMode] = useState<CalMode>("month");
+  const [mode, setMode] = useState<CalMode>("week");
   const [cursor, setCursor] = useState(new Date(now));
   const [selected, setSelected] = useState(fmtDate(now));
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [miniMonth, setMiniMonth] = useState(new Date(now));
   const [form, setForm] = useState({
     title: "",
     startTime: "09:00",
@@ -97,39 +160,41 @@ export default function CalendarView({ events, onEventsChange }: Props) {
     color: EVENT_COLORS[0],
   });
 
-  /* scroll day/week timeline to ~8 AM on mount */
+  /* scroll day/week timeline to ~7 AM on mount */
   const timelineRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if ((mode === "day" || mode === "week") && timelineRef.current) {
-      timelineRef.current.scrollTop = 8 * 60; // 8h * hourH(60)
+      timelineRef.current.scrollTop = 7 * HOUR_HEIGHT;
     }
   }, [mode]);
 
   /* ── navigation ────────────────────────────────── */
 
-  const navigate = (dir: number) => {
-    const d = new Date(cursor);
-    if (mode === "day") d.setDate(d.getDate() + dir);
-    else if (mode === "week") d.setDate(d.getDate() + dir * 7);
-    else if (mode === "month") d.setMonth(d.getMonth() + dir);
-    else d.setFullYear(d.getFullYear() + dir);
-    setCursor(d);
-  };
+  const navigate = useCallback((dir: number) => {
+    setCursor((d) => {
+      const next = new Date(d);
+      if (mode === "day") next.setDate(next.getDate() + dir);
+      else if (mode === "week") next.setDate(next.getDate() + dir * 7);
+      else if (mode === "month") next.setMonth(next.getMonth() + dir);
+      else next.setFullYear(next.getFullYear() + dir);
+      return next;
+    });
+  }, [mode]);
 
   const goToday = () => {
     const d = new Date();
     setCursor(d);
     setSelected(fmtDate(d));
+    setMiniMonth(d);
   };
 
-  /* select a date (from any sub‑view) */
   const selectDate = (d: Date) => {
     setSelected(fmtDate(d));
     setCursor(d);
   };
 
   /* header label */
-  const headerLabel = (() => {
+  const headerLabel = useMemo(() => {
     if (mode === "day")
       return cursor.toLocaleDateString("en-US", {
         weekday: "long",
@@ -140,14 +205,18 @@ export default function CalendarView({ events, onEventsChange }: Props) {
     if (mode === "week") {
       const ws = startOfWeek(cursor);
       const we = addDays(ws, 6);
-      const sm = ws.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      const em = we.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-      return `${sm} – ${em}`;
+      if (ws.getMonth() === we.getMonth()) {
+        return `${MONTHS[ws.getMonth()]} ${ws.getFullYear()}`;
+      }
+      if (ws.getFullYear() === we.getFullYear()) {
+        return `${MONTHS_SHORT[ws.getMonth()]} – ${MONTHS_SHORT[we.getMonth()]} ${ws.getFullYear()}`;
+      }
+      return `${MONTHS_SHORT[ws.getMonth()]} ${ws.getFullYear()} – ${MONTHS_SHORT[we.getMonth()]} ${we.getFullYear()}`;
     }
     if (mode === "month")
       return `${MONTHS[cursor.getMonth()]} ${cursor.getFullYear()}`;
     return `${cursor.getFullYear()}`;
-  })();
+  }, [mode, cursor]);
 
   /* CRUD */
   const addEvent = () => {
@@ -181,60 +250,184 @@ export default function CalendarView({ events, onEventsChange }: Props) {
 
   return (
     <div className="flex h-full">
-      {/* ── left: calendar area ──────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* ── left sidebar: mini calendar + day detail ── */}
+      <div className="w-60 border-r border-white/[0.06] flex flex-col shrink-0">
+        {/* Mini calendar */}
+        <div className="px-4 pt-4 pb-2">
+          <MiniCalendar
+            month={miniMonth}
+            onMonthChange={setMiniMonth}
+            selected={selected}
+            events={events}
+            onSelect={(d) => {
+              selectDate(d);
+              setMiniMonth(d);
+            }}
+          />
+        </div>
+
+        {/* Selected day detail */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-[13px] font-medium text-white/80">
+                {selDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+              </p>
+            </div>
+            <button
+              onClick={() => setAdding(!adding)}
+              className={`p-1 rounded-md transition-all ${
+                adding
+                  ? "bg-white/[0.08] text-white/50"
+                  : "text-white/30 hover:text-white/60 hover:bg-white/[0.05]"
+              }`}
+            >
+              {adding ? <X size={14} weight="light" /> : <Plus size={14} weight="light" />}
+            </button>
+          </div>
+
+          {/* Quick add form */}
+          {adding && (
+            <div className="px-4 pb-3 space-y-2">
+              <input
+                type="text"
+                placeholder="Event title..."
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && addEvent()}
+                className="w-full px-2.5 py-1.5 text-[12px] rounded-md bg-white/[0.05] border border-white/[0.08] text-white/90 placeholder:text-white/25 outline-none focus:border-white/[0.15] transition-colors"
+                autoFocus
+              />
+              <div className="flex gap-1.5 items-center">
+                <input
+                  type="time"
+                  value={form.startTime}
+                  onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                  className="flex-1 px-2 py-1 text-[11px] rounded-md bg-white/[0.05] border border-white/[0.08] text-white/70 outline-none focus:border-white/[0.15]"
+                />
+                <span className="text-[10px] text-white/20">→</span>
+                <input
+                  type="time"
+                  value={form.endTime}
+                  onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                  className="flex-1 px-2 py-1 text-[11px] rounded-md bg-white/[0.05] border border-white/[0.08] text-white/70 outline-none focus:border-white/[0.15]"
+                />
+              </div>
+              <div className="flex gap-1 items-center">
+                {EVENT_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setForm({ ...form, color: c })}
+                    className={`w-4 h-4 rounded-full transition-all ${
+                      form.color === c ? "ring-[1.5px] ring-white/40 scale-110" : "opacity-40 hover:opacity-80"
+                    }`}
+                    style={{ background: c }}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={addEvent}
+                disabled={!form.title.trim()}
+                className="w-full py-1.5 text-[11px] rounded-md bg-[#528BFF]/20 text-[#528BFF] hover:bg-[#528BFF]/30 disabled:opacity-25 disabled:cursor-default transition-all font-medium"
+              >
+                Add Event
+              </button>
+            </div>
+          )}
+
+          {/* Event list */}
+          <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-0.5">
+            {selEvents.length === 0 ? (
+              <p className="text-[12px] text-white/15 text-center mt-8">
+                No events
+              </p>
+            ) : (
+              selEvents.map((ev) => (
+                <div
+                  key={ev.id}
+                  onMouseEnter={() => setEditingId(ev.id)}
+                  onMouseLeave={() => setEditingId(null)}
+                  className="group relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-white/[0.035] transition-all"
+                >
+                  <div
+                    className="w-[3px] shrink-0 self-stretch rounded-full min-h-[28px]"
+                    style={{ background: ev.color }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] text-white/75 font-medium truncate leading-tight">
+                      {ev.title}
+                    </p>
+                    <p className="text-[10px] text-white/30 mt-0.5 flex items-center gap-1">
+                      <Clock size={9} weight="light" />
+                      {ev.startTime} – {ev.endTime}
+                    </p>
+                  </div>
+                  {editingId === ev.id && (
+                    <button
+                      onClick={() => delEvent(ev.id)}
+                      className="p-1 rounded hover:bg-white/[0.08] text-white/20 hover:text-red-400 transition-all"
+                    >
+                      <Trash size={12} weight="light" />
+                    </button>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── right: main calendar area ────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 bg-nera">
         {/* toolbar */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-3 shrink-0">
+        <div className="flex items-center justify-between px-5 h-12 shrink-0 border-b border-white/[0.06]">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-white/90 min-w-0 truncate">
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-1 rounded-md hover:bg-white/[0.06] text-white/35 hover:text-white/65 transition-all"
+              >
+                <CaretLeft size={14} weight="light" />
+              </button>
+              <button
+                onClick={() => navigate(1)}
+                className="p-1 rounded-md hover:bg-white/[0.06] text-white/35 hover:text-white/65 transition-all"
+              >
+                <CaretRight size={14} weight="light" />
+              </button>
+            </div>
+            <h2 className="text-[14px] font-semibold text-white/85 truncate">
               {headerLabel}
             </h2>
             <button
               onClick={goToday}
-              className="text-[11px] px-2.5 py-1 rounded-md bg-white/[0.05] text-white/40 hover:text-white/70 hover:bg-white/[0.09] transition-all shrink-0"
+              className="text-[10px] px-2 py-0.5 rounded-md border border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/[0.15] transition-all"
             >
               Today
             </button>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {/* view switcher */}
-            <div className="flex rounded-lg bg-white/[0.04] p-0.5">
+          <div className="flex items-center">
+            <div className="flex rounded-md bg-white/[0.03] border border-white/[0.06] p-[2px]">
               {(["day", "week", "month", "year"] as CalMode[]).map((m) => (
                 <button
                   key={m}
                   onClick={() => setMode(m)}
-                  className={`px-3 py-1 text-[11px] rounded-md capitalize transition-all ${
+                  className={`px-2.5 py-[3px] text-[10px] rounded-[4px] capitalize transition-all font-medium ${
                     mode === m
-                      ? "bg-white/[0.08] text-white/85"
-                      : "text-white/35 hover:text-white/55"
+                      ? "bg-white/[0.08] text-white/80 shadow-sm"
+                      : "text-white/30 hover:text-white/50"
                   }`}
                 >
                   {m}
                 </button>
               ))}
             </div>
-
-            {/* prev / next */}
-            <div className="flex items-center gap-0.5 ml-1">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-1.5 rounded-md hover:bg-white/[0.07] text-white/40 hover:text-white/70 transition-all"
-              >
-                <CaretLeft size={15} weight="light" />
-              </button>
-              <button
-                onClick={() => navigate(1)}
-                className="p-1.5 rounded-md hover:bg-white/[0.07] text-white/40 hover:text-white/70 transition-all"
-              >
-                <CaretRight size={15} weight="light" />
-              </button>
-            </div>
           </div>
         </div>
 
         {/* content area */}
-        <div className="flex-1 overflow-hidden px-6 pb-4">
+        <div className="flex-1 overflow-hidden">
           {mode === "day" && (
             <DayView
               date={cursor}
@@ -276,123 +469,99 @@ export default function CalendarView({ events, onEventsChange }: Props) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* ── right: detail panel ──────────────────── */}
-      <div className="w-72 border-l border-white/[0.06] flex flex-col shrink-0">
-        <div className="p-5 border-b border-white/[0.06]">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-[15px] font-semibold text-white/90">
-                {selDate.toLocaleDateString("en-US", { weekday: "long" })}
-              </h3>
-              <p className="text-[13px] text-white/35 mt-0.5">
-                {selDate.toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-            </div>
-            <button
-              onClick={() => setAdding(!adding)}
-              className={`p-1.5 rounded-md transition-all ${
-                adding
-                  ? "bg-white/[0.08] text-white/60"
-                  : "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25"
-              }`}
-            >
-              {adding ? <X size={15} weight="light" /> : <Plus size={15} weight="light" />}
-            </button>
-          </div>
+/* ══════════════════════════════════════════════════════
+   MINI CALENDAR – compact month in left sidebar
+   ══════════════════════════════════════════════════════ */
+
+function MiniCalendar({
+  month,
+  onMonthChange,
+  selected,
+  events,
+  onSelect,
+}: {
+  month: Date;
+  onMonthChange: (d: Date) => void;
+  selected: string;
+  events: CalendarEvent[];
+  onSelect: (d: Date) => void;
+}) {
+  const y = month.getFullYear();
+  const m = month.getMonth();
+  const dim = daysInMonth(y, m);
+  const offset = firstDayOffset(y, m);
+
+  const prevMonth = () => {
+    const d = new Date(month);
+    d.setMonth(d.getMonth() - 1);
+    onMonthChange(d);
+  };
+  const nextMonth = () => {
+    const d = new Date(month);
+    d.setMonth(d.getMonth() + 1);
+    onMonthChange(d);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-semibold text-white/60">
+          {MONTHS_SHORT[m]} {y}
+        </span>
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={prevMonth}
+            className="p-0.5 rounded hover:bg-white/[0.06] text-white/25 hover:text-white/50 transition-all"
+          >
+            <CaretLeft size={11} weight="bold" />
+          </button>
+          <button
+            onClick={nextMonth}
+            className="p-0.5 rounded hover:bg-white/[0.06] text-white/25 hover:text-white/50 transition-all"
+          >
+            <CaretRight size={11} weight="bold" />
+          </button>
         </div>
+      </div>
 
-        {adding && (
-          <div className="p-4 border-b border-white/[0.06] space-y-2.5">
-            <input
-              type="text"
-              placeholder="Event title"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              onKeyDown={(e) => e.key === "Enter" && addEvent()}
-              className="w-full px-3 py-2 text-[13px] rounded-md"
-              autoFocus
-            />
-            <div className="flex gap-2 items-center">
-              <input
-                type="time"
-                value={form.startTime}
-                onChange={(e) =>
-                  setForm({ ...form, startTime: e.target.value })
-                }
-                className="flex-1 px-2.5 py-1.5 text-[12px] rounded-md"
-              />
-              <span className="text-[11px] text-white/25">→</span>
-              <input
-                type="time"
-                value={form.endTime}
-                onChange={(e) =>
-                  setForm({ ...form, endTime: e.target.value })
-                }
-                className="flex-1 px-2.5 py-1.5 text-[12px] rounded-md"
-              />
-            </div>
-            <div className="flex gap-1.5">
-              {EVENT_COLORS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setForm({ ...form, color: c })}
-                  className={`w-5 h-5 rounded-full transition-all ${
-                    form.color === c
-                      ? "ring-2 ring-white/30 scale-110"
-                      : "opacity-50 hover:opacity-90"
-                  }`}
-                  style={{ background: c }}
-                />
-              ))}
-            </div>
-            <button
-              onClick={addEvent}
-              disabled={!form.title.trim()}
-              className="w-full py-2 text-[13px] rounded-md bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 disabled:opacity-30 disabled:cursor-default transition-all"
-            >
-              Add Event
-            </button>
+      <div className="grid grid-cols-7 gap-[1px]">
+        {DAYS_NARROW.map((d, i) => (
+          <div key={i} className="text-center text-[9px] text-white/20 pb-1 font-medium">
+            {d}
           </div>
-        )}
+        ))}
+        {Array.from({ length: offset }, (_, i) => (
+          <div key={`b${i}`} />
+        ))}
+        {Array.from({ length: dim }, (_, i) => {
+          const d = i + 1;
+          const ds = fmt(y, m, d);
+          const today = isToday(y, m, d);
+          const sel = ds === selected;
+          const hasEvents = events.some((e) => e.date === ds);
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-1.5">
-          {selEvents.length === 0 ? (
-            <p className="text-[13px] text-white/20 text-center mt-10">
-              No events
-            </p>
-          ) : (
-            selEvents.map((ev) => (
-              <div
-                key={ev.id}
-                className="group flex items-start gap-3 p-3 rounded-lg bg-white/[0.025] hover:bg-white/[0.05] transition-all"
-              >
-                <div
-                  className="w-[3px] shrink-0 self-stretch rounded-full"
-                  style={{ background: ev.color }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] text-white/80 font-medium truncate">
-                    {ev.title}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-1 text-[11px] text-white/35">
-                    <Clock size={11} weight="light" />
-                    {ev.startTime} — {ev.endTime}
-                  </div>
-                </div>
-                <button
-                  onClick={() => delEvent(ev.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/[0.08] text-white/25 hover:text-red-400 transition-all"
-                >
-                  <Trash size={13} weight="light" />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
+          return (
+            <button
+              key={d}
+              onClick={() => onSelect(new Date(y, m, d))}
+              className={`
+                w-full aspect-square flex items-center justify-center rounded-full text-[10px] transition-all relative
+                ${today ? "bg-[#528BFF] text-white font-semibold" : ""}
+                ${sel && !today ? "bg-white/[0.08] text-white/90 font-medium" : ""}
+                ${!today && !sel ? "text-white/45 hover:bg-white/[0.05]" : ""}
+              `}
+            >
+              {d}
+              {hasEvents && !today && (
+                <span className="absolute bottom-[1px] w-[3px] h-[3px] rounded-full bg-[#528BFF]/60" />
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -419,61 +588,63 @@ function DayView({
   const dayEvents = events
     .filter((e) => e.date === ds)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
-  const hourH = 60; // px per hour
   const nowH = new Date().getHours() + new Date().getMinutes() / 60;
 
   return (
-    <div
-      ref={timelineRef}
-      className="h-full overflow-y-auto relative rounded-lg"
-    >
-      <div className="relative" style={{ height: 24 * hourH }}>
+    <div ref={timelineRef} className="h-full overflow-y-auto">
+      <div className="relative" style={{ height: 24 * HOUR_HEIGHT }}>
         {/* hour rows */}
         {HOURS.map((h) => (
           <div
             key={h}
-            className="absolute w-full flex border-t border-white/[0.04]"
-            style={{ top: h * hourH, height: hourH }}
+            className="absolute w-full flex"
+            style={{ top: h * HOUR_HEIGHT, height: HOUR_HEIGHT }}
           >
-            <span className="w-14 shrink-0 text-[10px] text-white/20 pt-1.5 text-right pr-3">
-              {String(h).padStart(2, "0")}:00
+            <span className="w-16 shrink-0 text-[10px] text-white/20 text-right pr-4 -mt-[6px]">
+              {h === 0 ? "" : `${String(h).padStart(2, "0")}:00`}
             </span>
-            <div className="flex-1" />
+            <div className="flex-1 border-t border-white/[0.04]" />
           </div>
         ))}
 
-        {/* now line */}
+        {/* now indicator */}
         {isTodayDate(date) && (
           <div
-            className="absolute left-14 right-0 h-[2px] bg-blue-400/50 z-10 pointer-events-none"
-            style={{ top: nowH * hourH }}
+            className="absolute left-16 right-0 z-10 pointer-events-none flex items-center"
+            style={{ top: nowH * HOUR_HEIGHT }}
           >
-            <div className="absolute -left-1 -top-[3px] w-2 h-2 rounded-full bg-blue-400" />
+            <div className="w-2 h-2 rounded-full bg-[#528BFF] -ml-1" />
+            <div className="flex-1 h-[1.5px] bg-[#528BFF]/60" />
           </div>
         )}
 
         {/* events */}
-        {dayEvents.map((ev) => {
-          const top = timeToY(ev.startTime, hourH);
-          const bot = timeToY(ev.endTime, hourH);
-          const h = Math.max(bot - top, 20);
+        {layoutOverlappingEvents(dayEvents).map(({ event: ev, col, totalCols }) => {
+          const top = timeToY(ev.startTime);
+          const bot = timeToY(ev.endTime);
+          const h = Math.max(bot - top, 22);
+          const GAP = 2;
+          const widthPct = `calc(${100 / totalCols}% - ${GAP}px)`;
+          const leftPct = `calc(68px + ${col} * ((100% - 68px - 12px) / ${totalCols}) + ${GAP / 2}px)`;
           return (
             <button
               key={ev.id}
               onClick={() => onSelect(date)}
-              className="absolute left-16 right-4 rounded-md px-2.5 py-1.5 text-left hover:brightness-110 transition-all z-[5]"
+              className="absolute rounded-md px-3 py-1.5 text-left hover:brightness-110 transition-all z-[5] border-l-[3px] overflow-hidden"
               style={{
                 top,
                 height: h,
-                background: ev.color + "22",
-                borderLeft: `3px solid ${ev.color}`,
+                left: leftPct,
+                width: `calc((100% - 68px - 12px) / ${totalCols} - ${GAP}px)`,
+                background: ev.color + "18",
+                borderLeftColor: ev.color,
               }}
             >
-              <p className="text-[12px] text-white/80 font-medium truncate">
+              <p className="text-[11px] text-white/80 font-medium truncate">
                 {ev.title}
               </p>
-              {h > 30 && (
-                <p className="text-[10px] text-white/35 mt-0.5">
+              {h > 28 && (
+                <p className="text-[9px] text-white/30 mt-0.5">
                   {ev.startTime} – {ev.endTime}
                 </p>
               )}
@@ -486,7 +657,7 @@ function DayView({
 }
 
 /* ══════════════════════════════════════════════════════
-   WEEK VIEW – 7 columns × 24 h
+   WEEK VIEW – 7 columns × 24 h (Notion-style)
    ══════════════════════════════════════════════════════ */
 
 function WeekView({
@@ -504,15 +675,13 @@ function WeekView({
 }) {
   const ws = startOfWeek(cursor);
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
-  const hourH = 56;
   const nowH = new Date().getHours() + new Date().getMinutes() / 60;
-  const todayDateStr = fmtDate(new Date());
 
   return (
     <div className="flex flex-col h-full">
-      {/* day headers */}
-      <div className="flex shrink-0 border-b border-white/[0.06]">
-        <div className="w-14 shrink-0" />
+      {/* day column headers */}
+      <div className="flex shrink-0">
+        <div className="w-16 shrink-0" />
         {weekDates.map((d, i) => {
           const ds = fmtDate(d);
           const today = isTodayDate(d);
@@ -521,18 +690,18 @@ function WeekView({
             <button
               key={i}
               onClick={() => onSelect(d)}
-              className="flex-1 flex flex-col items-center py-2 gap-0.5 hover:bg-white/[0.03] transition-all"
+              className="flex-1 flex flex-col items-center py-2.5 gap-0.5 hover:bg-white/[0.02] transition-all border-b border-white/[0.06]"
             >
-              <span className="text-[10px] text-white/30 uppercase">
+              <span className={`text-[10px] uppercase font-medium ${today ? "text-[#528BFF]" : "text-white/25"}`}>
                 {DAYS_SHORT[i]}
               </span>
               <span
-                className={`text-[14px] w-7 h-7 flex items-center justify-center rounded-full ${
+                className={`text-[15px] w-8 h-8 flex items-center justify-center rounded-full transition-all ${
                   today
-                    ? "bg-blue-500/80 text-white font-semibold"
+                    ? "bg-[#528BFF] text-white font-semibold"
                     : sel
-                    ? "bg-white/[0.08] text-white/90"
-                    : "text-white/55"
+                    ? "bg-white/[0.07] text-white/85"
+                    : "text-white/50 hover:bg-white/[0.04]"
                 }`}
               >
                 {d.getDate()}
@@ -544,16 +713,16 @@ function WeekView({
 
       {/* scrollable grid */}
       <div ref={timelineRef} className="flex-1 overflow-y-auto">
-        <div className="relative flex" style={{ height: 24 * hourH }}>
+        <div className="relative flex" style={{ height: 24 * HOUR_HEIGHT }}>
           {/* time gutter */}
-          <div className="w-14 shrink-0 relative">
+          <div className="w-16 shrink-0 relative">
             {HOURS.map((h) => (
               <span
                 key={h}
-                className="absolute text-[10px] text-white/20 text-right pr-3 w-14"
-                style={{ top: h * hourH + 2 }}
+                className="absolute text-[10px] text-white/20 text-right pr-4 w-16 -mt-[6px]"
+                style={{ top: h * HOUR_HEIGHT }}
               >
-                {String(h).padStart(2, "0")}:00
+                {h === 0 ? "" : `${String(h).padStart(2, "0")}:00`}
               </span>
             ))}
           </div>
@@ -565,48 +734,62 @@ function WeekView({
               .filter((e) => e.date === ds)
               .sort((a, b) => a.startTime.localeCompare(b.startTime));
             const today = isTodayDate(d);
+            const sel = ds === selected;
+
             return (
               <div
                 key={ci}
-                className="flex-1 relative border-l border-white/[0.04]"
+                className={`flex-1 relative border-l border-white/[0.04] ${sel ? "bg-white/[0.015]" : ""}`}
               >
-                {/* hour rows */}
+                {/* hour gridlines */}
                 {HOURS.map((h) => (
                   <div
                     key={h}
                     className="absolute w-full border-t border-white/[0.035]"
-                    style={{ top: h * hourH, height: hourH }}
+                    style={{ top: h * HOUR_HEIGHT, height: HOUR_HEIGHT }}
                   />
                 ))}
 
-                {/* now line */}
+                {/* now indicator */}
                 {today && (
                   <div
-                    className="absolute left-0 right-0 h-[2px] bg-blue-400/40 z-10 pointer-events-none"
-                    style={{ top: nowH * hourH }}
-                  />
+                    className="absolute left-0 right-0 z-10 pointer-events-none flex items-center"
+                    style={{ top: nowH * HOUR_HEIGHT }}
+                  >
+                    <div className="w-2 h-2 rounded-full bg-[#528BFF] -ml-1" />
+                    <div className="flex-1 h-[1.5px] bg-[#528BFF]/50" />
+                  </div>
                 )}
 
                 {/* events */}
-                {dayEv.map((ev) => {
-                  const top = timeToY(ev.startTime, hourH);
-                  const bot = timeToY(ev.endTime, hourH);
-                  const ht = Math.max(bot - top, 18);
+                {layoutOverlappingEvents(dayEv).map(({ event: ev, col, totalCols }) => {
+                  const top = timeToY(ev.startTime);
+                  const bot = timeToY(ev.endTime);
+                  const ht = Math.max(bot - top, 20);
+                  const GAP = 2;
+                  const leftPx = 2 + col * ((100 / totalCols));
                   return (
                     <button
                       key={ev.id}
                       onClick={() => onSelect(d)}
-                      className="absolute left-0.5 right-0.5 rounded-[5px] px-1.5 py-1 text-left hover:brightness-110 transition-all z-[5]"
+                      className="absolute rounded-[5px] px-2 py-1 text-left hover:brightness-110 transition-all z-[5] border-l-[2.5px] overflow-hidden"
                       style={{
                         top,
                         height: ht,
-                        background: ev.color + "22",
-                        borderLeft: `2px solid ${ev.color}`,
+                        left: `calc(${(col / totalCols) * 100}% + ${GAP / 2}px)`,
+                        width: `calc(${100 / totalCols}% - ${GAP}px)`,
+                        background: ev.color + "18",
+                        borderLeftColor: ev.color,
                       }}
                     >
                       <p className="text-[10px] text-white/80 font-medium truncate leading-tight">
                         {ev.title}
                       </p>
+                      {ht > 30 && (
+                        <p className="text-[8px] text-white/30 mt-0.5">
+                          {ev.startTime} – {ev.endTime}
+                        </p>
+                      )}
                     </button>
                   );
                 })}
@@ -620,7 +803,7 @@ function WeekView({
 }
 
 /* ══════════════════════════════════════════════════════
-   MONTH VIEW – classic grid with event indicators
+   MONTH VIEW – clean grid with event chips
    ══════════════════════════════════════════════════════ */
 
 function MonthView({
@@ -656,11 +839,11 @@ function MonthView({
   return (
     <div className="flex flex-col h-full">
       {/* day headers */}
-      <div className="grid grid-cols-7 mb-1">
+      <div className="grid grid-cols-7">
         {DAYS_SHORT.map((d) => (
           <div
             key={d}
-            className="text-center text-[11px] text-white/25 font-medium py-1.5"
+            className="text-center text-[10px] text-white/25 font-medium py-2 border-b border-white/[0.06]"
           >
             {d}
           </div>
@@ -668,43 +851,54 @@ function MonthView({
       </div>
 
       {/* grid */}
-      <div className="grid grid-cols-7 flex-1 auto-rows-fr gap-px">
+      <div className="grid grid-cols-7 flex-1 auto-rows-fr">
         {cells.map((c, i) => {
           const ds = fmt(c.y, c.m, c.d);
           const today = isToday(c.y, c.m, c.d);
           const isSel = ds === selected;
-          const dots = events.filter((e) => e.date === ds);
+          const dayEvents = events
+            .filter((e) => e.date === ds)
+            .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
           return (
             <button
               key={i}
               onClick={() => onSelect(new Date(c.y, c.m, c.d))}
               className={`
-                flex flex-col items-center justify-start pt-1.5 gap-1
-                rounded-lg transition-all duration-100
-                ${!c.cur ? "text-white/15" : "text-white/65"}
-                ${isSel ? "bg-white/[0.07]" : "hover:bg-white/[0.035]"}
+                flex flex-col items-start pt-1.5 px-1.5 gap-[2px] border-b border-r border-white/[0.04]
+                transition-all duration-75 text-left min-h-0 overflow-hidden
+                ${!c.cur ? "text-white/12" : "text-white/60"}
+                ${isSel ? "bg-white/[0.04]" : "hover:bg-white/[0.025]"}
               `}
             >
               <span
                 className={`
-                  text-[13px] w-7 h-7 flex items-center justify-center rounded-full
-                  ${today ? "bg-blue-500/80 text-white font-semibold" : ""}
-                  ${isSel && !today ? "text-white/95 font-medium" : ""}
+                  text-[11px] w-6 h-6 flex items-center justify-center rounded-full mb-[1px] shrink-0
+                  ${today ? "bg-[#528BFF] text-white font-semibold" : ""}
+                  ${isSel && !today ? "text-white/90 font-medium" : ""}
                 `}
               >
                 {c.d}
               </span>
-              {dots.length > 0 && (
-                <div className="flex gap-[3px]">
-                  {dots.slice(0, 3).map((e, j) => (
-                    <span
-                      key={j}
-                      className="block w-[5px] h-[5px] rounded-full"
-                      style={{ background: e.color }}
-                    />
-                  ))}
+              {dayEvents.slice(0, 3).map((ev, j) => (
+                <div
+                  key={j}
+                  className="w-full flex items-center gap-1 px-1 py-[1px] rounded-[3px] truncate"
+                  style={{ background: ev.color + "18" }}
+                >
+                  <span
+                    className="w-[4px] h-[4px] rounded-full shrink-0"
+                    style={{ background: ev.color }}
+                  />
+                  <span className="text-[9px] text-white/60 truncate leading-tight">
+                    {ev.title}
+                  </span>
                 </div>
+              ))}
+              {dayEvents.length > 3 && (
+                <span className="text-[8px] text-white/25 px-1">
+                  +{dayEvents.length - 3} more
+                </span>
               )}
             </button>
           );
@@ -730,10 +924,10 @@ function YearView({
   onSelect: (d: Date) => void;
 }) {
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="grid grid-cols-3 xl:grid-cols-4 gap-6 pb-4">
+    <div className="h-full overflow-y-auto p-5">
+      <div className="grid grid-cols-3 xl:grid-cols-4 gap-5">
         {Array.from({ length: 12 }, (_, mi) => (
-          <MiniMonth
+          <YearMiniMonth
             key={mi}
             year={year}
             month={mi}
@@ -747,7 +941,7 @@ function YearView({
   );
 }
 
-function MiniMonth({
+function YearMiniMonth({
   year,
   month,
   events,
@@ -763,50 +957,43 @@ function MiniMonth({
   const dim = daysInMonth(year, month);
   const offset = firstDayOffset(year, month);
 
-  const blanks = Array.from({ length: offset }, (_, i) => (
-    <div key={`b${i}`} />
-  ));
-
-  const days = Array.from({ length: dim }, (_, i) => {
-    const d = i + 1;
-    const ds = fmt(year, month, d);
-    const today = isToday(year, month, d);
-    const sel = ds === selected;
-    const hasEvents = events.some((e) => e.date === ds);
-
-    return (
-      <button
-        key={d}
-        onClick={() => onSelect(new Date(year, month, d))}
-        className={`
-          w-full aspect-square flex items-center justify-center rounded-full text-[10px] transition-all
-          ${today ? "bg-blue-500/70 text-white font-semibold" : ""}
-          ${sel && !today ? "bg-white/[0.09] text-white/90" : ""}
-          ${!today && !sel ? "text-white/45 hover:bg-white/[0.06]" : ""}
-          ${hasEvents && !today ? "font-semibold" : ""}
-        `}
-      >
-        {d}
-      </button>
-    );
-  });
-
   return (
-    <div className="rounded-xl bg-white/[0.02] border border-white/[0.05] p-3">
-      <p className="text-[12px] font-medium text-white/60 mb-2">
+    <div className="rounded-xl bg-white/[0.015] border border-white/[0.05] p-3">
+      <p className="text-[11px] font-semibold text-white/55 mb-2">
         {MONTHS_SHORT[month]}
       </p>
-      <div className="grid grid-cols-7 gap-[2px]">
-        {DAYS_SHORT.map((dn) => (
-          <span
-            key={dn}
-            className="text-center text-[8px] text-white/20 pb-0.5"
-          >
-            {dn.charAt(0)}
+      <div className="grid grid-cols-7 gap-[1px]">
+        {DAYS_NARROW.map((dn, i) => (
+          <span key={i} className="text-center text-[8px] text-white/20 pb-0.5 font-medium">
+            {dn}
           </span>
         ))}
-        {blanks}
-        {days}
+        {Array.from({ length: offset }, (_, i) => (
+          <div key={`b${i}`} />
+        ))}
+        {Array.from({ length: dim }, (_, i) => {
+          const d = i + 1;
+          const ds = fmt(year, month, d);
+          const today = isToday(year, month, d);
+          const sel = ds === selected;
+          const hasEvents = events.some((e) => e.date === ds);
+
+          return (
+            <button
+              key={d}
+              onClick={() => onSelect(new Date(year, month, d))}
+              className={`
+                w-full aspect-square flex items-center justify-center rounded-full text-[9px] transition-all
+                ${today ? "bg-[#528BFF] text-white font-semibold" : ""}
+                ${sel && !today ? "bg-white/[0.08] text-white/85" : ""}
+                ${!today && !sel ? "text-white/40 hover:bg-white/[0.05]" : ""}
+                ${hasEvents && !today && !sel ? "font-semibold text-white/55" : ""}
+              `}
+            >
+              {d}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
