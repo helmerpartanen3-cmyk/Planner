@@ -635,7 +635,7 @@ export default function WeatherView() {
               <div className="rounded-4xl saturate-130 backdrop-blur-lg border border-white/[0.08] overflow-hidden">
                 <div className="flex">
                   <div className="flex-1 p-4 flex items-center gap-3 border-r border-white/[0.06]">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                       <SunHorizon
                         size={16}
                         weight="fill"
@@ -652,7 +652,7 @@ export default function WeatherView() {
                     </div>
                   </div>
                   <div className="flex-1 p-4 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                       <Moon
                         size={16}
                         weight="fill"
