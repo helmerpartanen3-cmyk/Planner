@@ -7,8 +7,11 @@ import CalendarView from "./components/CalendarView";
 import TasksView from "./components/TasksView";
 import TodayView from "./components/TodayView";
 import WeatherView from "./components/WeatherView";
+import HabitsView from "./components/HabitsView";
+import NotesView from "./components/NotesView";
+import FocusView from "./components/FocusView";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import type { ViewType, CalendarEvent, Task } from "./types";
+import type { ViewType, CalendarEvent, Task, Habit, Note, FocusSession } from "./types";
 
 export default function Home() {
   const [navOrderRaw, setNavOrder, navHydrated] = useLocalStorage<ViewType[]>(
@@ -39,6 +42,12 @@ export default function Home() {
     []
   );
   const [tasks, setTasks] = useLocalStorage<Task[]>("clarity-tasks", []);
+  const [habits, setHabits] = useLocalStorage<Habit[]>("clarity-habits", []);
+  const [notes, setNotes] = useLocalStorage<Note[]>("clarity-notes", []);
+  const [focusSessions, setFocusSessions] = useLocalStorage<FocusSession[]>(
+    "clarity-focus-sessions",
+    []
+  );
 
   // Set the startup view to the first item in the persisted order (wait for hydration)
   useEffect(() => {
@@ -63,20 +72,37 @@ export default function Home() {
         <Titlebar isWeather={currentView === "weather"} />
 
         <main className="flex-1 overflow-hidden">
-          {currentView === "today" && (
-            <TodayView
-              events={events}
-              tasks={tasks}
-              onTasksChange={setTasks}
-            />
-          )}
-          {currentView === "calendar" && (
-            <CalendarView events={events} onEventsChange={setEvents} />
-          )}
-          {currentView === "tasks" && (
-            <TasksView tasks={tasks} onTasksChange={setTasks} />
-          )}
-          {currentView === "weather" && <WeatherView />}
+          <div key={currentView} className="h-full">
+            {currentView === "today" && (
+              <TodayView
+                events={events}
+                tasks={tasks}
+                habits={habits}
+                focusSessions={focusSessions}
+                onTasksChange={setTasks}
+                onNavigate={setView}
+              />
+            )}
+            {currentView === "calendar" && (
+              <CalendarView events={events} onEventsChange={setEvents} />
+            )}
+            {currentView === "tasks" && (
+              <TasksView tasks={tasks} onTasksChange={setTasks} />
+            )}
+            {currentView === "habits" && (
+              <HabitsView habits={habits} onHabitsChange={setHabits} />
+            )}
+            {currentView === "notes" && (
+              <NotesView notes={notes} onNotesChange={setNotes} />
+            )}
+            {currentView === "focus" && (
+              <FocusView
+                sessions={focusSessions}
+                onSessionsChange={setFocusSessions}
+              />
+            )}
+            {currentView === "weather" && <WeatherView />}
+          </div>
         </main>
       </div>
     </div>

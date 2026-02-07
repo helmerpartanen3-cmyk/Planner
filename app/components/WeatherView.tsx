@@ -365,7 +365,7 @@ export default function WeatherView() {
 
       {/* ── scrollable content over sky ──────────────── */}
       <div className="relative h-full overflow-y-auto">
-        <div className="max-w-[680px] mx-auto px-8 space-y-3">
+        <div className="max-w-[680px] mx-auto px-4 py-3 space-y-4">
           {/* ── search ─────────────────────────────────── */}
           <div className="flex justify-center mb-2">
             <div
