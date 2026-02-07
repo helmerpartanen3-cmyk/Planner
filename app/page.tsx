@@ -3,22 +3,6 @@ import { Globe } from "@phosphor-icons/react/dist/ssr";
 export default function Home() {
   return (
     <div className="flex h-full items-center justify-center font-sans">
-      <main className="flex w-full max-w-2xl flex-col items-center gap-8 px-8 py-16 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-white">
-          Welcome to Clarity
-        </h1>
-        <p className="max-w-md text-lg leading-relaxed text-zinc-400">
-          Your desktop app is ready. Edit{" "}
-          <code className="rounded bg-white/10 px-1.5 py-0.5 text-sm font-mono text-zinc-200">
-            app/page.tsx
-          </code>{" "}
-          to get started.
-        </p>
-        <div className="mt-4 flex gap-3">
-          <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-sm text-zinc-500">Running in Electron</span>
-        </div>
-      </main>
     </div>
   );
 }
