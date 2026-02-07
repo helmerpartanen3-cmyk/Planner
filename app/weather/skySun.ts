@@ -432,6 +432,9 @@ export const drawSun = (
   const dy = sunPos.y - size / 2;
   ctx.drawImage(sprite, dx, dy);
 
+  // --- Bloom — wide, soft overexposure glow ---
+  drawBloom(ctx, width, height, sunPos, sunElevation, masterBrightness, sunColor);
+
   // Skip all lens effects when essentially invisible
   if (masterBrightness > 0.02) {
     // --- Veiling glare (soft contrast wash near sun) ---
@@ -474,6 +477,81 @@ export const drawSun = (
   } // end masterBrightness > 0.02
 
   ctx.restore();
+};
+
+/* --------------------------------------------------
+   Bloom — wide, soft overexposure glow around the sun.
+   Simulates light scatter in the atmosphere and sensor
+   bloom.  Three layered radial passes:
+     1) Tight bright core bloom (small, intense)
+     2) Medium warm bloom (moderate size, coloured)
+     3) Wide atmospheric scatter (very large, faint)
+   Each layer uses a slightly different colour to give
+   natural depth rather than a flat circle.
+-------------------------------------------------- */
+
+const drawBloom = (
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  sunPos: SunScreenPos,
+  elevation: number,
+  brightness: number,
+  sunColor: Rgb
+) => {
+  // Bloom is strongest at moderate-high elevations and fades near horizon
+  // (where veiling glare and the atmosphere band already dominate)
+  const elevFactor = smoothstep(-3, 12, elevation);
+  const intensity = brightness * elevFactor;
+  if (intensity < 0.015) return;
+
+  const shortSide = Math.min(width, height);
+
+  // Near-horizon bloom is warmer and wider; high-noon bloom is whiter and tighter
+  const horizonality = smoothstep(25, 0, elevation);
+
+  // --- Layer 1: tight bright core ---
+  {
+    const r = shortSide * (0.12 + horizonality * 0.06);
+    const a = intensity * 0.32;
+    const c = lerpRgb(sunColor, [1, 1, 1], 0.6); // desaturated, nearly white
+    const g = ctx.createRadialGradient(sunPos.x, sunPos.y, 0, sunPos.x, sunPos.y, r);
+    g.addColorStop(0, toRgba(c, a));
+    g.addColorStop(0.3, toRgba(c, a * 0.45));
+    g.addColorStop(0.7, toRgba(c, a * 0.08));
+    g.addColorStop(1, toRgba(c, 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(sunPos.x - r, sunPos.y - r, r * 2, r * 2);
+  }
+
+  // --- Layer 2: medium warm bloom ---
+  {
+    const r = shortSide * (0.22 + horizonality * 0.1);
+    const a = intensity * 0.16;
+    const c = lerpRgb(sunColor, [1, 0.92, 0.78], horizonality * 0.5);
+    const g = ctx.createRadialGradient(sunPos.x, sunPos.y, 0, sunPos.x, sunPos.y, r);
+    g.addColorStop(0, toRgba(c, a));
+    g.addColorStop(0.2, toRgba(c, a * 0.55));
+    g.addColorStop(0.55, toRgba(c, a * 0.12));
+    g.addColorStop(1, toRgba(c, 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(sunPos.x - r, sunPos.y - r, r * 2, r * 2);
+  }
+
+  // --- Layer 3: wide atmospheric scatter ---
+  {
+    const r = shortSide * (0.42 + horizonality * 0.18);
+    const a = intensity * 0.06;
+    const c = lerpRgb(sunColor, [1, 0.85, 0.65], horizonality * 0.6);
+    const g = ctx.createRadialGradient(sunPos.x, sunPos.y, 0, sunPos.x, sunPos.y, r);
+    g.addColorStop(0, toRgba(c, a));
+    g.addColorStop(0.15, toRgba(c, a * 0.6));
+    g.addColorStop(0.45, toRgba(c, a * 0.15));
+    g.addColorStop(0.8, toRgba(c, a * 0.03));
+    g.addColorStop(1, toRgba(c, 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(sunPos.x - r, sunPos.y - r, r * 2, r * 2);
+  }
 };
 
 /* --------------------------------------------------

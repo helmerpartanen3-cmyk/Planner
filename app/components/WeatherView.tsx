@@ -371,8 +371,8 @@ export default function WeatherView() {
             <div
               className={`flex items-center gap-2.5 px-4 py-2 rounded-full transition-all duration-300 w-[260px] backdrop-blur-md ${
                 searchFocused
-                  ? "bg-black/20 border border-white/[0.18] shadow-lg shadow-black/20"
-                  : "bg-black/10 border border-white/[0.08]"
+                  ? "saturate-130 border border-white/[0.18] shadow-lg"
+                  : "saturate-130 border border-white/[0.08]"
               }`}
             >
               <MagnifyingGlass
@@ -416,11 +416,18 @@ export default function WeatherView() {
                       size={13}
                       weight="light"
                       className="text-white/50"
+                      style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.28))" }}
                     />
-                    <span className="text-[13px] text-white/60 tracking-wide">
+                    <span
+                      className="text-[13px] text-white/60 tracking-wide"
+                      style={{ textShadow: "0 2px 10px rgba(0,0,0,0.32)" }}
+                    >
                       {data.location}
                     </span>
-                    <span className="text-[11px] text-white/35">
+                    <span
+                      className="text-[11px] text-white/35"
+                      style={{ textShadow: "0 2px 8px rgba(0,0,0,0.28)" }}
+                    >
                       {data.country}
                     </span>
                   </div>
@@ -428,8 +435,8 @@ export default function WeatherView() {
                   {/* temp */}
                   <div className="relative flex items-center justify-center mb-4">
                     <span
-                      className="text-[112px] font-[200] text-white tracking-tighter leading-none tabular-nums"
-                      style={{ textShadow: "0 2px 40px rgba(0,0,0,0.15)" }}
+                      className="text-[112px] font-extralight text-white tracking-tighter leading-none tabular-nums"
+                      style={{ fontWeight: 100, textShadow: "0 4px 48px rgba(0,0,0,0.32), 0 1.5px 0 rgba(0,0,0,0.18)" }}
                     >
                       {data.temp}°
                     </span>
@@ -438,22 +445,22 @@ export default function WeatherView() {
                   {/* description */}
                   <p
                     className="text-[14px] text-white/70 capitalize mb-1.5"
-                    style={{ textShadow: "0 1px 8px rgba(0,0,0,0.2)" }}
+                    style={{ textShadow: "0 2px 12px rgba(0,0,0,0.28), 0 1px 0 rgba(0,0,0,0.18)" }}
                   >
                     {data.description}
                   </p>
 
                   {/* high / low */}
                   <div className="flex items-center gap-3 text-[12px] tabular-nums text-white/45">
-                    <span>H {data.high}°</span>
+                    <span style={{ textShadow: "0 1.5px 6px rgba(0,0,0,0.22)" }}>H {data.high}°</span>
                     <span className="w-px h-2.5 bg-white/15" />
-                    <span>L {data.low}°</span>
+                    <span style={{ textShadow: "0 1.5px 6px rgba(0,0,0,0.22)" }}>L {data.low}°</span>
                   </div>
                 </div>
               </div>
 
               {/* ── hourly ─────────────────────────────── */}
-              <div className="rounded-4xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
+              <div className="rounded-4xl saturate-130 backdrop-blur-lg border border-white/[0.08] overflow-hidden">
                 <div className="px-5 pt-3.5 pb-2">
                   <span className="text-[10px] uppercase tracking-[0.12em] text-white/30 font-medium">
                     24-Hour Forecast
@@ -477,13 +484,13 @@ export default function WeatherView() {
                           className={`text-[10px] tabular-nums mb-2 ${
                             isNow
                               ? "text-white font-semibold"
-                              : "text-white/30"
+                              : "text-neutral-400 group-hover:text-white"
                           }`}
                         >
                           {h.time}
                         </span>
                         <div
-                          className={`mb-2 ${isNow ? "text-white/70" : "text-white/30 group-hover:text-white/45"} transition-colors`}
+                          className={`mb-2 ${isNow ? "text-neutral-400 group-hover:text-white" : "text-neutral-400 group-hover:text-white"} transition-colors`}
                         >
                           <WeatherIcon code={h.icon} size={16} />
                         </div>
@@ -516,7 +523,7 @@ export default function WeatherView() {
               {/* ── two-col: forecast + details ────────── */}
               <div className="grid grid-cols-5 gap-4">
                 {/* forecast (3 cols) */}
-                <div className="col-span-3 rounded-4xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
+                <div className="col-span-3 rounded-4xl saturate-130 backdrop-blur-lg border border-white/[0.08] overflow-hidden">
                   <div className="px-5 pt-3.5 pb-2">
                     <span className="text-[10px] uppercase tracking-[0.12em] text-white/30 font-medium">
                       6-Day Forecast
@@ -565,7 +572,7 @@ export default function WeatherView() {
 
                 {/* detail stack (2 cols) */}
                 <div className="col-span-2 space-y-4">
-                  <div className="rounded-4xl bg-black/15 backdrop-blur-xl border border-white/[0.08] p-4 space-y-4">
+                  <div className="rounded-4xl saturate-130 backdrop-blur-lg border border-white/[0.08] p-4 space-y-4">
                     <MiniStat
                       icon={<ThermometerSimple size={13} weight="light" />}
                       label="Feels Like"
@@ -600,7 +607,7 @@ export default function WeatherView() {
                     />
                   </div>
 
-                  <div className="rounded-4xl bg-black/15 backdrop-blur-xl border border-white/[0.08] p-4 space-y-4">
+                  <div className="rounded-4xl saturate-130 backdrop-blur-lg border border-white/[0.08] p-4 space-y-4">
                     <MiniStat
                       icon={<Drop size={13} weight="light" />}
                       label="Humidity"
@@ -625,7 +632,7 @@ export default function WeatherView() {
               </div>
 
               {/* ── sunrise / sunset strip ──────────────── */}
-              <div className="rounded-4xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
+              <div className="rounded-4xl saturate-130 backdrop-blur-lg border border-white/[0.08] overflow-hidden">
                 <div className="flex">
                   <div className="flex-1 p-4 flex items-center gap-3 border-r border-white/[0.06]">
                     <div className="w-8 h-8 rounded-full bg-amber-400/[0.1] flex items-center justify-center">
@@ -636,7 +643,7 @@ export default function WeatherView() {
                       />
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.1em] text-white/25 mb-0.5">
+                      <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-400 mb-0.5">
                         Sunrise
                       </p>
                       <p className="text-[14px] text-white/80 tabular-nums font-medium">
@@ -653,7 +660,7 @@ export default function WeatherView() {
                       />
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.1em] text-white/25 mb-0.5">
+                      <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-400 mb-0.5">
                         Sunset
                       </p>
                       <p className="text-[14px] text-white/80 tabular-nums font-medium">
