@@ -18,6 +18,7 @@ interface SidebarProps {
   onViewChange: (view: ViewType) => void;
   navOrder: ViewType[];
   onNavOrderChange: (order: ViewType[]) => void;
+  isWeather?: boolean;
 }
 
 export default function Sidebar({
@@ -25,6 +26,7 @@ export default function Sidebar({
   onViewChange,
   navOrder,
   onNavOrderChange,
+  isWeather = false,
 }: SidebarProps) {
   const today = new Date();
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -61,7 +63,7 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="w-56 h-full flex flex-col border-r border-white/[0.06] select-none shrink-0">
+    <aside className={`w-56 h-full flex flex-col border-r select-none shrink-0 transition-colors duration-300 ${isWeather ? "border-white/[0.06] bg-transparent" : "border-white/[0.06] bg-neutral-800/70"}`}>
       {/* Drag area + branding */}
       <div
         className="h-9 flex items-center px-5 shrink-0"

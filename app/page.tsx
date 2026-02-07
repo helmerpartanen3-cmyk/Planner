@@ -50,16 +50,17 @@ export default function Home() {
   const currentView = view ?? navOrder[0] ?? "today";
 
   return (
-    <div className="flex h-screen select-none">
+    <div className="flex h-screen select-none relative">
       <Sidebar
         currentView={currentView}
         onViewChange={setView}
         navOrder={navOrder}
         onNavOrderChange={setNavOrder}
+        isWeather={currentView === "weather"}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Titlebar />
+        <Titlebar isWeather={currentView === "weather"} />
 
         <main className="flex-1 overflow-hidden">
           {currentView === "today" && (

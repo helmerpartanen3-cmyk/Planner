@@ -69,16 +69,15 @@ export const useSkyBackground = (state: SkyStateInput) => {
     if (!ctx) return;
 
     const updateSize = () => {
-      const bounds = (canvas.parentElement ?? canvas).getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
-      const width = Math.max(1, Math.floor(bounds.width * dpr));
-      const height = Math.max(1, Math.floor(bounds.height * dpr));
+      const width = Math.max(1, Math.floor(window.innerWidth * dpr));
+      const height = Math.max(1, Math.floor(window.innerHeight * dpr));
       if (width === sizeRef.current.width && height === sizeRef.current.height) return;
       sizeRef.current = { width, height, dpr };
       canvas.width = width;
       canvas.height = height;
-      canvas.style.width = `${Math.floor(bounds.width)}px`;
-      canvas.style.height = `${Math.floor(bounds.height)}px`;
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
       
       // Resize precipitation system
       if (precipitationSystemRef.current) {
@@ -87,8 +86,7 @@ export const useSkyBackground = (state: SkyStateInput) => {
     };
 
     updateSize();
-    const resizeObserver = new ResizeObserver(updateSize);
-    resizeObserver.observe(canvas.parentElement ?? canvas);
+    window.addEventListener('resize', updateSize);
 
     let raf = 0;
     let last = performance.now();
@@ -127,7 +125,7 @@ export const useSkyBackground = (state: SkyStateInput) => {
     raf = window.requestAnimationFrame(animate);
 
     return () => {
-      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateSize);
       window.cancelAnimationFrame(raf);
       if (precipitationSystemRef.current) {
         precipitationSystemRef.current.clear();

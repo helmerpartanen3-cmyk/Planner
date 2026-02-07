@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-export default function Titlebar() {
+export default function Titlebar({ isWeather = false }: { isWeather?: boolean }) {
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function Titlebar() {
 
   return (
     <div
-      className="h-9 flex items-center shrink-0 select-none"
+      className={`h-9 flex items-center shrink-0 select-none ${isWeather ? "bg-transparent" : ""}`}
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
       <div className="flex-1" />

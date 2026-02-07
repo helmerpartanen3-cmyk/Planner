@@ -354,17 +354,17 @@ export default function WeatherView() {
       {/* ── sky background canvases ──────────────────── */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full"
-        style={{ zIndex: 0 }}
+        className="fixed inset-0 w-screen h-screen"
+        style={{ zIndex: -2 }}
       />
       <canvas
         ref={cloudsCanvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{ zIndex: 1 }}
+        className="fixed inset-0 w-screen h-screen pointer-events-none"
+        style={{ zIndex: -1 }}
       />
 
       {/* ── scrollable content over sky ──────────────── */}
-      <div className="relative h-full overflow-y-auto" style={{ zIndex: 2 }}>
+      <div className="relative h-full overflow-y-auto">
         <div className="max-w-[680px] mx-auto px-8 py-8 space-y-4">
           {/* ── search ─────────────────────────────────── */}
           <div className="flex justify-center mb-2">
