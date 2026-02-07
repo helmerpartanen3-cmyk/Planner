@@ -14,7 +14,7 @@ import {
   MagnifyingGlass,
   ArrowRight,
 } from "@phosphor-icons/react";
-import type { ViewType } from "../types";
+import type { ViewType } from "../../types";
 
 interface CommandPaletteProps {
   isOpen: boolean;

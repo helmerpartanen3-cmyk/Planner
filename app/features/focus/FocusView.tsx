@@ -13,24 +13,14 @@ import {
   Clock,
   Target,
 } from "@phosphor-icons/react";
-import type { FocusSession } from "../types";
-
-const MODES = {
-  work: { label: "Focus", duration: 25 * 60, color: "#528BFF", icon: Lightning },
-  shortBreak: { label: "Short Break", duration: 5 * 60, color: "#34D399", icon: Coffee },
-  longBreak: { label: "Long Break", duration: 15 * 60, color: "#A78BFA", icon: Coffee },
-} as const;
-
-type ModeKey = keyof typeof MODES;
+import type { FocusSession } from "../../types";
+import { MODES } from "./constants";
+import type { ModeKey } from "./constants";
+import { todayStr } from "../../lib";
 
 interface Props {
   sessions: FocusSession[];
   onSessionsChange: (sessions: FocusSession[]) => void;
-}
-
-function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function FocusView({ sessions, onSessionsChange }: Props) {

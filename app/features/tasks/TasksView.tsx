@@ -16,25 +16,15 @@ import {
   TrendUp,
   Lightning,
 } from "@phosphor-icons/react";
-import { APP_COLORS } from "../types";
-import type { Task, SubTask } from "../types";
-
-const PRIORITY_CONFIG = {
-  high: { label: "High", color: "#EF4444", icon: Flag },
-  medium: { label: "Medium", color: "#F59E0B", icon: Flag },
-  low: { label: "Low", color: "#528BFF", icon: Flag },
-} as const;
-
-type FilterType = "all" | "today" | "upcoming" | "overdue" | "completed";
+import { APP_COLORS } from "../../config";
+import type { Task, SubTask } from "../../types";
+import { PRIORITY_CONFIG } from "./constants";
+import type { FilterType } from "./constants";
+import { todayStr } from "../../lib";
 
 interface Props {
   tasks: Task[];
   onTasksChange: (tasks: Task[]) => void;
-}
-
-function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function TasksView({ tasks, onTasksChange }: Props) {

@@ -20,8 +20,8 @@ import {
   Moon,
 } from "@phosphor-icons/react";
 
-import { useSkyBackground } from "../weather/useSkyBackground";
-import type { SkyStateInput } from "../weather/skyTypes";
+import { useSkyBackground } from "./engine/useSkyBackground";
+import type { SkyStateInput } from "./engine/skyTypes";
 import {
   getSunPosition,
   estimateSunriseSunset,
@@ -29,7 +29,7 @@ import {
   estimateMoonElevation,
   getSeason,
   getLocalTimeString,
-} from "../weather/skyAstronomy";
+} from "./engine/skyAstronomy";
 
 /* ── types ───────────────────────────────────────────── */
 

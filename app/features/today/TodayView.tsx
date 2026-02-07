@@ -16,8 +16,9 @@ import {
   Target,
   Sparkle,
 } from "@phosphor-icons/react";
-import type { CalendarEvent, Task, Habit, FocusSession, Goal, ViewType } from "../types";
-import { getHabitIcon } from "./HabitsView";
+import type { CalendarEvent, Task, Habit, FocusSession, Goal, ViewType } from "../../types";
+import { getHabitIcon } from "../../lib";
+import { todayStr } from "../../lib";
 
 interface Props {
   events: CalendarEvent[];
@@ -43,11 +44,6 @@ function getGreetingIcon() {
   if (h >= 6 && h < 20)
     return <Sun size={16} weight="regular" className="text-amber-400/70" />;
   return <Moon size={16} weight="regular" className="text-indigo-400/70" />;
-}
-
-function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /* ── Progress Ring ───────────────────────────────── */

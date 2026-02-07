@@ -14,7 +14,8 @@ import {
   ArrowRight,
   Star,
 } from "@phosphor-icons/react";
-import { Goal, Milestone, APP_COLORS } from "../types";
+import type { Goal, Milestone } from "../../types";
+import { APP_COLORS } from "../../config";
 
 interface GoalsViewProps {
   goals: Goal[];

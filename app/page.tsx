@@ -1,18 +1,17 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Sidebar, { DEFAULT_NAV_ORDER } from "./components/Sidebar";
-import Titlebar from "./components/Titlebar";
-import CalendarView from "./components/CalendarView";
-import TasksView from "./components/TasksView";
-import TodayView from "./components/TodayView";
-import WeatherView from "./components/WeatherView";
-import HabitsView from "./components/HabitsView";
-import NotesView from "./components/NotesView";
-import FocusView from "./components/FocusView";
-import GoalsView from "./components/GoalsView";
-import CommandPalette from "./components/CommandPalette";
-import { useLocalStorage } from "./hooks/useLocalStorage";
+import { Sidebar, Titlebar, CommandPalette } from "./components/layout";
+import { TodayView } from "./features/today";
+import { CalendarView } from "./features/calendar";
+import { TasksView } from "./features/tasks";
+import { HabitsView } from "./features/habits";
+import { NotesView } from "./features/notes";
+import { FocusView } from "./features/focus";
+import { GoalsView } from "./features/goals";
+import { WeatherView } from "./features/weather";
+import { useLocalStorage } from "./hooks";
+import { DEFAULT_NAV_ORDER } from "./config";
 import type { ViewType, CalendarEvent, Task, Habit, Note, FocusSession, Goal } from "./types";
 
 export default function Home() {

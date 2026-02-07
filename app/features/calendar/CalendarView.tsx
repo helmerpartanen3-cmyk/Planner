@@ -9,25 +9,17 @@ import {
   Trash,
   X,
 } from "@phosphor-icons/react";
-import { APP_COLORS } from "../types";
-import type { CalendarEvent } from "../types";
-
-/* ── constants ───────────────────────────────────────── */
-
-const DAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const DAYS_NARROW = ["M", "T", "W", "T", "F", "S", "S"];
-const MONTHS = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December",
-];
-const MONTHS_SHORT = [
-  "Jan","Feb","Mar","Apr","May","Jun",
-  "Jul","Aug","Sep","Oct","Nov","Dec",
-];
-const EVENT_COLORS = APP_COLORS;
-
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const HOUR_HEIGHT = 56;
+import { APP_COLORS } from "../../config";
+import type { CalendarEvent } from "../../types";
+import {
+  DAYS_SHORT,
+  DAYS_NARROW,
+  MONTHS,
+  MONTHS_SHORT,
+  EVENT_COLORS,
+  HOURS,
+  HOUR_HEIGHT,
+} from "./constants";
 
 type CalMode = "day" | "week" | "month" | "year";
 

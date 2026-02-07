@@ -13,15 +13,14 @@ import {
   ArrowsOutSimple,
   TextAa,
 } from "@phosphor-icons/react";
-import { APP_COLORS } from "../types";
-import type { Note } from "../types";
+import { APP_COLORS } from "../../config";
+import type { Note } from "../../types";
+import { TAG_SUGGESTIONS } from "./constants";
 
 interface Props {
   notes: Note[];
   onNotesChange: (notes: Note[]) => void;
 }
-
-const TAG_SUGGESTIONS = ["personal", "work", "ideas", "todo", "important", "reference", "journal"];
 
 export default function NotesView({ notes, onNotesChange }: Props) {
   const [search, setSearch] = useState("");
