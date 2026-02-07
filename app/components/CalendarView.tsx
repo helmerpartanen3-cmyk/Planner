@@ -251,7 +251,7 @@ export default function CalendarView({ events, onEventsChange }: Props) {
   return (
     <div className="flex h-full">
       {/* ── left sidebar: mini calendar + day detail ── */}
-      <div className="w-60 border-r border-white/[0.06] flex flex-col shrink-0">
+      <div className="w-60 flex flex-col shrink-0">
         {/* Mini calendar */}
         <div className="px-4 pt-4 pb-2">
           <MiniCalendar
@@ -278,7 +278,7 @@ export default function CalendarView({ events, onEventsChange }: Props) {
               onClick={() => setAdding(!adding)}
               className={`p-1 rounded-md transition-all ${
                 adding
-                  ? "bg-white/[0.08] text-white/50"
+                  ? "bg-white/[0.08] text-white"
                   : "text-white/30 hover:text-white/60 hover:bg-white/[0.05]"
               }`}
             >
@@ -378,9 +378,9 @@ export default function CalendarView({ events, onEventsChange }: Props) {
       </div>
 
       {/* ── right: main calendar area ────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 bg-nera">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* toolbar */}
-        <div className="flex items-center justify-between px-5 h-12 shrink-0 border-b border-white/[0.06]">
+        <div className="flex items-center justify-between px-5 h-12 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-0.5">
               <button
@@ -408,14 +408,14 @@ export default function CalendarView({ events, onEventsChange }: Props) {
           </div>
 
           <div className="flex items-center">
-            <div className="flex rounded-md bg-white/[0.03] border border-white/[0.06] p-[2px]">
+            <div className="flex rounded-xl bg-neutral-800 border border-white/[0.06] p-1">
               {(["day", "week", "month", "year"] as CalMode[]).map((m) => (
                 <button
                   key={m}
                   onClick={() => setMode(m)}
-                  className={`px-2.5 py-[3px] text-[10px] rounded-[4px] capitalize transition-all font-medium ${
+                  className={`px-2.5 py-[3px] text-xs rounded-lg capitalize transition-all font-light ${
                     mode === m
-                      ? "bg-white/[0.08] text-white/80 shadow-sm"
+                      ? "bg-neutral-700 text-white/80 shadow-sm"
                       : "text-white/30 hover:text-white/50"
                   }`}
                 >
@@ -427,7 +427,7 @@ export default function CalendarView({ events, onEventsChange }: Props) {
         </div>
 
         {/* content area */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden bg-neutral-800 rounded-4xl m-2 border border-white/[0.06]">
           {mode === "day" && (
             <DayView
               date={cursor}
@@ -696,7 +696,7 @@ function WeekView({
                 {DAYS_SHORT[i]}
               </span>
               <span
-                className={`text-[15px] w-8 h-8 flex items-center justify-center rounded-full transition-all ${
+                className={`text-xs w-8 h-8 flex items-center justify-center rounded-full transition-all ${
                   today
                     ? "bg-[#528BFF] text-white font-semibold"
                     : sel

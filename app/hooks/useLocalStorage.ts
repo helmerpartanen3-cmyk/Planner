@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 export function useLocalStorage<T>(
   key: string,
   initialValue: T
-): [T, React.Dispatch<React.SetStateAction<T>>] {
+): [T, React.Dispatch<React.SetStateAction<T>>, boolean] {
   const [value, setValue] = useState<T>(initialValue);
   const [hydrated, setHydrated] = useState(false);
 
@@ -31,5 +31,5 @@ export function useLocalStorage<T>(
     }
   }, [key, value, hydrated]);
 
-  return [value, setValue];
+  return [value, setValue, hydrated];
 }

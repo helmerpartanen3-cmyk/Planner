@@ -11,7 +11,7 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { ViewType, CalendarEvent, Task } from "./types";
 
 export default function Home() {
-  const [navOrderRaw, setNavOrder] = useLocalStorage<ViewType[]>(
+  const [navOrderRaw, setNavOrder, navHydrated] = useLocalStorage<ViewType[]>(
     "clarity-nav-order",
     DEFAULT_NAV_ORDER
   );
@@ -40,12 +40,12 @@ export default function Home() {
   );
   const [tasks, setTasks] = useLocalStorage<Task[]>("clarity-tasks", []);
 
-  // Set the startup view to the first item in the persisted order
+  // Set the startup view to the first item in the persisted order (wait for hydration)
   useEffect(() => {
-    if (view === null && navOrder.length > 0) {
+    if (view === null && navHydrated && navOrder.length > 0) {
       setView(navOrder[0]);
     }
-  }, [navOrder, view]);
+  }, [navOrder, navHydrated, view]);
 
   const currentView = view ?? navOrder[0] ?? "today";
 
