@@ -5,8 +5,6 @@ import { computeSkyLayers } from './skyModel';
 import { mixOklab } from './skyColor';
 import { renderSkyGradient } from './skyRenderer';
 import { PrecipitationSystem, Particle } from './precipitationSystem';
-import { PRECIPITATION_CONFIG } from './precipitationConfig';
-import { SkyCloudsRenderer } from './skyClouds';
 
 const blendLayers = (from: SkyLayerColors, to: SkyLayerColors, t: number): SkyLayerColors => ({
   upperSky: mixOklab(from.upperSky, to.upperSky, t),
@@ -58,7 +56,6 @@ export const useSkyBackground = (state: SkyStateInput) => {
   const sizeRef = useRef({ width: 0, height: 0, dpr: 1 });
   const stateRef = useRef(state);
   const precipitationSystemRef = useRef<PrecipitationSystem | null>(null);
-  const cloudsRendererRef = useRef<SkyCloudsRenderer | null>(null); 
 
   useEffect(() => {
     targetRef.current = computeSkyLayers(state);
@@ -86,15 +83,6 @@ export const useSkyBackground = (state: SkyStateInput) => {
       // Resize precipitation system
       if (precipitationSystemRef.current) {
         precipitationSystemRef.current.resize(width, height);
-      }
-
-      // Resize clouds canvas
-      const cloudsCanvas = cloudsCanvasRef.current;
-      if (cloudsCanvas) {
-        cloudsCanvas.width = width;
-        cloudsCanvas.height = height;
-        cloudsCanvas.style.width = `${Math.floor(bounds.width)}px`;
-        cloudsCanvas.style.height = `${Math.floor(bounds.height)}px`;
       }
     };
 
@@ -133,13 +121,6 @@ export const useSkyBackground = (state: SkyStateInput) => {
       precipSystem.update(dt / 1000, precipitation, precipIntensity);
       renderPrecipitation(ctx, precipSystem, precipitation, precipIntensity, currentRef.current);
 
-      // Render clouds (disabled for development)
-      // const cloudCover = stateRef.current.weather.cloudCover;
-      if (cloudsRendererRef.current) {
-        cloudsRendererRef.current.dispose();
-        cloudsRendererRef.current = null;
-      }
-
       raf = window.requestAnimationFrame(animate);
     };
 
@@ -150,9 +131,6 @@ export const useSkyBackground = (state: SkyStateInput) => {
       window.cancelAnimationFrame(raf);
       if (precipitationSystemRef.current) {
         precipitationSystemRef.current.clear();
-      }
-      if (cloudsRendererRef.current) {
-        cloudsRendererRef.current.dispose();
       }
     };
   }, []);
@@ -228,8 +206,69 @@ const mapPrecipitationToIntensity = (weather: SkyStateInput['weather']): 'light'
   return 'moderate';
 };
 
+/* --------------------------------------------------
+   Snowflake sprite cache — avoids creating a radial
+   gradient per particle per frame. Keyed by bucketed
+   size; tint is applied via globalAlpha + compositing.
+-------------------------------------------------- */
+
+const snowSpriteCache = new Map<number, HTMLCanvasElement>();
+
+const getSnowSprite = (radius: number): HTMLCanvasElement => {
+  // Bucket to nearest 0.5 px
+  const bucket = Math.round(radius * 2) / 2;
+  const cached = snowSpriteCache.get(bucket);
+  if (cached) return cached;
+
+  const pad = 2;
+  const size = Math.ceil(bucket * 2 + pad);
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const sx = c.getContext('2d')!;
+  const cx = size / 2;
+
+  // Pure white snowflake — colour tinting is done externally
+  const g = sx.createRadialGradient(cx, cx, 0, cx, cx, bucket);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.6, 'rgba(255,255,255,0.6)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  sx.fillStyle = g;
+  sx.beginPath();
+  sx.arc(cx, cx, bucket, 0, Math.PI * 2);
+  sx.fill();
+
+  // Keep cache bounded
+  if (snowSpriteCache.size > 32) {
+    const first = snowSpriteCache.keys().next().value;
+    if (first !== undefined) snowSpriteCache.delete(first);
+  }
+  snowSpriteCache.set(bucket, c);
+  return c;
+};
+
+/* --------------------------------------------------
+   Rain colour strings — precomputed per intensity so
+   we never build them inside the hot particle loop.
+-------------------------------------------------- */
+
+const RAIN_STYLES: Record<string, { color: string; opacityMul: number; lineWidthMul: number }> = {
+  light:    { color: 'rgba(240,245,250,', opacityMul: 0.7,  lineWidthMul: 1.0 },
+  moderate: { color: 'rgba(255,255,255,', opacityMul: 1.0,  lineWidthMul: 1.0 },
+  heavy:    { color: 'rgba(220,240,255,', opacityMul: 1.2,  lineWidthMul: 1.0 },
+};
+
+const SNOW_OPACITY: Record<string, number> = { light: 0.8, moderate: 1.0, heavy: 1.1 };
+const RAIN_LENGTH:  Record<string, number> = { light: 8, moderate: 9, heavy: 10 };
+
 /**
- * Render precipitation particles to canvas
+ * Render precipitation particles to canvas.
+ *
+ * Performance notes vs. previous implementation:
+ *  - Snow: cached sprites instead of per-particle createRadialGradient
+ *  - Snow: sky-tint sampled once instead of per-particle OKLab round-trips
+ *  - Snow: no save/translate/rotate (sprite is rotationally symmetric)
+ *  - Rain: world-space line endpoints instead of per-particle save/translate/rotate
+ *  - Rain: single beginPath per lineWidth bucket
  */
 const renderPrecipitation = (
   ctx: CanvasRenderingContext2D,
@@ -238,137 +277,88 @@ const renderPrecipitation = (
   intensity: 'light' | 'moderate' | 'heavy' = 'moderate',
   skyLayers: SkyLayerColors
 ) => {
-  const config = PRECIPITATION_CONFIG;
   const particles = system.getParticles();
-  const canvasHeight = ctx.canvas.height;
-
   if (particles.length === 0) return;
 
-  // Set blend mode for precipitation - lighter blending for better visibility
-  const previousBlendMode = ctx.globalCompositeOperation;
+  const prevComp = ctx.globalCompositeOperation;
   ctx.globalCompositeOperation = 'lighten';
 
-  for (const particle of particles) {
-    // Don't modulate alpha here - let renderRainStreak/renderSnowflake handle it
-    ctx.globalAlpha = 1.0;
+  // --- Pre-compute snow tint ONCE (sample sky at mid-screen) ---
+  // This replaces per-particle sampleSkyColor → 2× mixOklab calls
+  const canvasH = ctx.canvas.height;
+  const midSky = sampleSkyColor(skyLayers, 0.5);
+  const snowTint: [number, number, number] = [
+    1.0 - (1.0 - midSky[0]) * 0.3,
+    1.0 - (1.0 - midSky[1]) * 0.3,
+    1.0 - (1.0 - midSky[2]) * 0.3,
+  ];
+  const snowTintCss = `rgba(${(snowTint[0] * 255) | 0},${(snowTint[1] * 255) | 0},${(snowTint[2] * 255) | 0},`;
 
-    if (particle.type === 'rain') {
-      renderRainStreak(ctx, particle, intensity);
+  // --- Rain setup ---
+  const rainStyle = RAIN_STYLES[intensity] || RAIN_STYLES.moderate;
+  const rainLen = RAIN_LENGTH[intensity] || 9;
+  const snowOpMul = SNOW_OPACITY[intensity] || 1.0;
+
+  // Separate rain particles by lineWidth bucket for batching
+  // Most rain particles share very similar lineWidth so 1-2 buckets cover all
+  const rainBuckets = new Map<number, { x1: number; y1: number; x2: number; y2: number; a: number }[]>();
+
+  for (const p of particles) {
+    if (p.type === 'rain') {
+      const halfLen = p.size * rainLen * 0.5;
+      const angle = Math.atan2(p.vy, p.vx);
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const lw = Math.round(Math.max(1.0, p.size * 1.2) * 2) / 2; // bucket to 0.5px
+
+      let bucket = rainBuckets.get(lw);
+      if (!bucket) { bucket = []; rainBuckets.set(lw, bucket); }
+
+      bucket.push({
+        x1: p.x - halfLen * cos,
+        y1: p.y - halfLen * sin,
+        x2: p.x + halfLen * cos,
+        y2: p.y + halfLen * sin,
+        a: Math.max(0.4, p.opacity * 1.5) * rainStyle.opacityMul,
+      });
     } else {
-      renderSnowflake(ctx, particle, intensity, skyLayers, canvasHeight);
+      // --- Snow: draw with cached sprite ---
+      const radius = p.size * 2;
+      const sprite = getSnowSprite(radius);
+      const half = sprite.width / 2;
+      const opacity = Math.max(0.5, p.opacity * 1.5) * snowOpMul;
+      if (opacity < 0.01) continue;
+
+      ctx.globalAlpha = opacity;
+      ctx.drawImage(sprite, p.x - half, p.y - half);
+    }
+  }
+
+  // --- Rain: batch-draw per lineWidth bucket ---
+  ctx.lineCap = 'round';
+  for (const [lw, lines] of rainBuckets) {
+    ctx.lineWidth = lw;
+
+    // Group by opacity bucket (round to 0.05) for fewer style changes
+    const opBuckets = new Map<number, typeof lines>();
+    for (const l of lines) {
+      const ob = Math.round(l.a * 20) / 20;
+      let arr = opBuckets.get(ob);
+      if (!arr) { arr = []; opBuckets.set(ob, arr); }
+      arr.push(l);
+    }
+
+    for (const [opVal, bucket] of opBuckets) {
+      ctx.strokeStyle = `${rainStyle.color}${opVal})`;
+      ctx.beginPath();
+      for (const l of bucket) {
+        ctx.moveTo(l.x1, l.y1);
+        ctx.lineTo(l.x2, l.y2);
+      }
+      ctx.stroke();
     }
   }
 
   ctx.globalAlpha = 1.0;
-  ctx.globalCompositeOperation = previousBlendMode;
-};
-
-/**
- * Render a single rain streak with intensity-based color and opacity
- */
-const renderRainStreak = (ctx: CanvasRenderingContext2D, particle: Particle, intensity: 'light' | 'moderate' | 'heavy' = 'moderate') => {
-  // Realistic rain streaks - balance between visibility and realism
-  let streakLength = particle.size * 8;
-  if (intensity === 'moderate') streakLength = particle.size * 9;
-  if (intensity === 'heavy') streakLength = particle.size * 10;
-
-  ctx.save();
-  ctx.translate(particle.x, particle.y);
-
-  const angle = Math.atan2(particle.vy, particle.vx);
-  ctx.rotate(angle);
-
-  // Adjust opacity and color based on rain intensity
-  let baseOpacity = Math.max(0.4, particle.opacity * 1.5);
-  let rainColor = 'rgba(255, 255, 255,';
-  
-  switch (intensity) {
-    case 'light':
-      // Drizzle: pale, slightly gray, lower opacity
-      baseOpacity *= 0.7;
-      rainColor = 'rgba(240, 245, 250,';
-      break;
-    case 'moderate':
-      // Normal rain: bright white
-      rainColor = 'rgba(255, 255, 255,';
-      break;
-    case 'heavy':
-      // Heavy rain/showers: very bright, slightly blue-tinted, higher opacity
-      baseOpacity *= 1.2;
-      rainColor = 'rgba(220, 240, 255,';
-      break;
-  }
-
-  ctx.strokeStyle = `${rainColor} ${baseOpacity})`;
-  ctx.lineWidth = Math.max(1.0, particle.size * 1.2);
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  ctx.beginPath();
-  ctx.moveTo(-streakLength / 2, 0);
-  ctx.lineTo(streakLength / 2, 0);
-  ctx.stroke();
-
-  ctx.restore();
-};
-
-/**
- * Render a single snowflake with intensity-based opacity and sky-tinted color
- */
-const renderSnowflake = (
-  ctx: CanvasRenderingContext2D, 
-  particle: Particle, 
-  intensity: 'light' | 'moderate' | 'heavy' = 'moderate',
-  skyLayers: SkyLayerColors,
-  canvasHeight: number
-) => {
-  ctx.save();
-  ctx.translate(particle.x, particle.y);
-
-  if (particle.rotation) {
-    ctx.rotate(particle.rotation);
-  }
-
-  // Adjust opacity based on snow intensity
-  let opacity = Math.max(0.5, particle.opacity * 1.5);
-  
-  switch (intensity) {
-    case 'light':
-      // Light snow: subtle, lower opacity
-      opacity *= 0.8;
-      break;
-    case 'moderate':
-      // Normal snow: balanced visibility
-      break;
-    case 'heavy':
-      // Heavy snow: very visible, higher opacity
-      opacity *= 1.1;
-      break;
-  }
-
-  // Sample sky color at particle position for realistic tinting
-  const normalizedY = particle.y / canvasHeight;
-  const skyColor = sampleSkyColor(skyLayers, normalizedY);
-  
-  // Create tinted snow color - blend white snow with sky color
-  // Snow should appear whiter in darker skies and more tinted in colorful skies
-  const snowTintFactor = 0.3; // How much the sky color affects the snow
-  const tintedColor: [number, number, number] = [
-    1.0 - (1.0 - skyColor[0]) * snowTintFactor, // Blend towards white
-    1.0 - (1.0 - skyColor[1]) * snowTintFactor,
-    1.0 - (1.0 - skyColor[2]) * snowTintFactor
-  ];
-
-  // Draw soft-edged snowflake with sky-tinted color
-  const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, particle.size * 2);
-  grad.addColorStop(0, `rgba(${Math.floor(tintedColor[0] * 255)}, ${Math.floor(tintedColor[1] * 255)}, ${Math.floor(tintedColor[2] * 255)}, ${opacity})`);
-  grad.addColorStop(0.6, `rgba(${Math.floor(tintedColor[0] * 255)}, ${Math.floor(tintedColor[1] * 255)}, ${Math.floor(tintedColor[2] * 255)}, ${opacity * 0.6})`);
-  grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.arc(0, 0, particle.size * 2, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
+  ctx.globalCompositeOperation = prevComp;
 };

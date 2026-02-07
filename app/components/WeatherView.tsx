@@ -453,7 +453,7 @@ export default function WeatherView() {
               </div>
 
               {/* ── hourly ─────────────────────────────── */}
-              <div className="rounded-2xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
+              <div className="rounded-4xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
                 <div className="px-5 pt-3.5 pb-2">
                   <span className="text-[10px] uppercase tracking-[0.12em] text-white/30 font-medium">
                     24-Hour Forecast
@@ -516,7 +516,7 @@ export default function WeatherView() {
               {/* ── two-col: forecast + details ────────── */}
               <div className="grid grid-cols-5 gap-4">
                 {/* forecast (3 cols) */}
-                <div className="col-span-3 rounded-2xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
+                <div className="col-span-3 rounded-4xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
                   <div className="px-5 pt-3.5 pb-2">
                     <span className="text-[10px] uppercase tracking-[0.12em] text-white/30 font-medium">
                       6-Day Forecast
@@ -532,7 +532,7 @@ export default function WeatherView() {
                       return (
                         <div
                           key={i}
-                          className="flex items-center px-3 py-[9px] gap-3 rounded-lg hover:bg-white/[0.04] transition-colors"
+                          className="flex items-center px-3 py-[9px] gap-3 rounded-xl hover:bg-white/[0.04] transition-colors"
                         >
                           <span className="text-[11px] text-white/50 w-8 shrink-0 font-medium">
                             {d.day}
@@ -565,7 +565,7 @@ export default function WeatherView() {
 
                 {/* detail stack (2 cols) */}
                 <div className="col-span-2 space-y-4">
-                  <div className="rounded-2xl bg-black/15 backdrop-blur-xl border border-white/[0.08] p-4 space-y-4">
+                  <div className="rounded-4xl bg-black/15 backdrop-blur-xl border border-white/[0.08] p-4 space-y-4">
                     <MiniStat
                       icon={<ThermometerSimple size={13} weight="light" />}
                       label="Feels Like"
@@ -600,7 +600,7 @@ export default function WeatherView() {
                     />
                   </div>
 
-                  <div className="rounded-2xl bg-black/15 backdrop-blur-xl border border-white/[0.08] p-4 space-y-4">
+                  <div className="rounded-4xl bg-black/15 backdrop-blur-xl border border-white/[0.08] p-4 space-y-4">
                     <MiniStat
                       icon={<Drop size={13} weight="light" />}
                       label="Humidity"
@@ -625,7 +625,7 @@ export default function WeatherView() {
               </div>
 
               {/* ── sunrise / sunset strip ──────────────── */}
-              <div className="rounded-2xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
+              <div className="rounded-4xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
                 <div className="flex">
                   <div className="flex-1 p-4 flex items-center gap-3 border-r border-white/[0.06]">
                     <div className="w-8 h-8 rounded-full bg-amber-400/[0.1] flex items-center justify-center">
