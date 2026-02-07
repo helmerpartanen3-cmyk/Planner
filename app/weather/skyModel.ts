@@ -20,28 +20,28 @@ const blendLayers = (a: SkyLayerColors, b: SkyLayerColors, t: number): SkyLayerC
 
 const PALETTES: Record<string, SkyLayerColors> = {
   day: {
-    upperSky: [0.32, 0.56, 0.93],
-    midSky: [0.46, 0.68, 0.95],
-    horizonBand: [0.8, 0.86, 0.94],
-    groundBounce: [0.26, 0.38, 0.52]
+    upperSky: [0.10, 0.30, 0.62],   // #194F9E deep cobalt
+    midSky: [0.29, 0.56, 0.85],     // #4A8FD9 medium sky blue
+    horizonBand: [0.53, 0.78, 0.92],// #87C7EB light sky blue
+    groundBounce: [0.22, 0.34, 0.50]
   },
   golden: {
-    upperSky: [0.36, 0.52, 0.88],
-    midSky: [0.55, 0.64, 0.86],
-    horizonBand: [0.96, 0.74, 0.53],
-    groundBounce: [0.35, 0.32, 0.4]
+    upperSky: [0.16, 0.22, 0.42],   // #293868 deep twilight blue
+    midSky: [0.44, 0.36, 0.56],     // #705C8F dusky purple
+    horizonBand: [0.94, 0.62, 0.31],// #F09E4F warm gold
+    groundBounce: [0.30, 0.26, 0.34]
   },
   sunset: {
-    upperSky: [0.18, 0.28, 0.5],
-    midSky: [0.42, 0.34, 0.62],
-    horizonBand: [0.95, 0.56, 0.38],
-    groundBounce: [0.22, 0.2, 0.32]
+    upperSky: [0.10, 0.10, 0.25],   // #19193F dark navy
+    midSky: [0.29, 0.17, 0.38],     // #4A2B61 deep purple
+    horizonBand: [0.83, 0.34, 0.24],// #D4573D burnt orange-red
+    groundBounce: [0.18, 0.14, 0.24]
   },
   night: {
-    upperSky: [0.06, 0.1, 0.22],
-    midSky: [0.1, 0.14, 0.28],
-    horizonBand: [0.22, 0.2, 0.3],
-    groundBounce: [0.08, 0.1, 0.16]
+    upperSky: [0.03, 0.04, 0.10],   // #080A1A near-black blue
+    midSky: [0.05, 0.07, 0.15],     // #0D1226 dark navy
+    horizonBand: [0.10, 0.10, 0.18],// #19192E dark blue-gray
+    groundBounce: [0.04, 0.05, 0.10]
   }
 };
 
