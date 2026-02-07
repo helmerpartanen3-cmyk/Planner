@@ -50,7 +50,7 @@ export default function CommandPalette({
       {
         id: "nav-today",
         label: "Go to Today",
-        icon: <CalendarDot size={16} weight="light" />,
+        icon: <CalendarDot size={16} weight="regular" />,
         category: "Navigation",
         action: () => { onNavigate("today"); onClose(); },
         keywords: ["home", "dashboard", "overview"],
@@ -58,7 +58,7 @@ export default function CommandPalette({
       {
         id: "nav-calendar",
         label: "Go to Calendar",
-        icon: <CalendarBlank size={16} weight="light" />,
+        icon: <CalendarBlank size={16} weight="regular" />,
         category: "Navigation",
         action: () => { onNavigate("calendar"); onClose(); },
         keywords: ["events", "schedule"],
@@ -66,7 +66,7 @@ export default function CommandPalette({
       {
         id: "nav-tasks",
         label: "Go to Tasks",
-        icon: <CheckSquare size={16} weight="light" />,
+        icon: <CheckSquare size={16} weight="regular" />,
         category: "Navigation",
         action: () => { onNavigate("tasks"); onClose(); },
         keywords: ["todo", "to-do"],
@@ -74,7 +74,7 @@ export default function CommandPalette({
       {
         id: "nav-habits",
         label: "Go to Habits",
-        icon: <Lightning size={16} weight="light" />,
+        icon: <Lightning size={16} weight="regular" />,
         category: "Navigation",
         action: () => { onNavigate("habits"); onClose(); },
         keywords: ["routine", "streak"],
@@ -82,7 +82,7 @@ export default function CommandPalette({
       {
         id: "nav-notes",
         label: "Go to Notes",
-        icon: <Notepad size={16} weight="light" />,
+        icon: <Notepad size={16} weight="regular" />,
         category: "Navigation",
         action: () => { onNavigate("notes"); onClose(); },
         keywords: ["write", "memo"],
@@ -90,7 +90,7 @@ export default function CommandPalette({
       {
         id: "nav-focus",
         label: "Go to Focus",
-        icon: <Timer size={16} weight="light" />,
+        icon: <Timer size={16} weight="regular" />,
         category: "Navigation",
         action: () => { onNavigate("focus"); onClose(); },
         keywords: ["pomodoro", "timer", "concentrate"],
@@ -98,7 +98,7 @@ export default function CommandPalette({
       {
         id: "nav-goals",
         label: "Go to Goals",
-        icon: <Target size={16} weight="light" />,
+        icon: <Target size={16} weight="regular" />,
         category: "Navigation",
         action: () => { onNavigate("goals"); onClose(); },
         keywords: ["milestones", "objectives"],
@@ -106,7 +106,7 @@ export default function CommandPalette({
       {
         id: "nav-weather",
         label: "Go to Weather",
-        icon: <CloudSun size={16} weight="light" />,
+        icon: <CloudSun size={16} weight="regular" />,
         category: "Navigation",
         action: () => { onNavigate("weather"); onClose(); },
         keywords: ["forecast"],
@@ -116,7 +116,7 @@ export default function CommandPalette({
         id: "add-task",
         label: "New Task",
         description: "Create a new task",
-        icon: <Plus size={16} weight="light" className="text-blue-400" />,
+        icon: <Plus size={16} weight="regular" className="text-blue-400" />,
         category: "Quick Actions",
         action: () => { onQuickAdd("task"); onClose(); },
         keywords: ["create", "add", "todo"],
@@ -125,7 +125,7 @@ export default function CommandPalette({
         id: "add-event",
         label: "New Event",
         description: "Create a calendar event",
-        icon: <Plus size={16} weight="light" className="text-green-400" />,
+        icon: <Plus size={16} weight="regular" className="text-green-400" />,
         category: "Quick Actions",
         action: () => { onQuickAdd("event"); onClose(); },
         keywords: ["create", "add", "calendar", "schedule"],
@@ -134,7 +134,7 @@ export default function CommandPalette({
         id: "add-note",
         label: "New Note",
         description: "Create a new note",
-        icon: <Plus size={16} weight="light" className="text-purple-400" />,
+        icon: <Plus size={16} weight="regular" className="text-purple-400" />,
         category: "Quick Actions",
         action: () => { onQuickAdd("note"); onClose(); },
         keywords: ["create", "add", "write"],
@@ -143,7 +143,7 @@ export default function CommandPalette({
         id: "add-habit",
         label: "New Habit",
         description: "Start tracking a new habit",
-        icon: <Plus size={16} weight="light" className="text-teal-400" />,
+        icon: <Plus size={16} weight="regular" className="text-teal-400" />,
         category: "Quick Actions",
         action: () => { onQuickAdd("habit"); onClose(); },
         keywords: ["create", "add", "routine"],
@@ -242,7 +242,7 @@ export default function CommandPalette({
       >
         {/* Search input */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.06]">
-          <MagnifyingGlass size={16} weight="light" className="text-white/30 shrink-0" />
+          <MagnifyingGlass size={16} weight="regular" className="text-white/30 shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -297,7 +297,7 @@ export default function CommandPalette({
                       )}
                     </div>
                     {isSelected && (
-                      <ArrowRight size={13} weight="light" className="text-white/30 shrink-0" />
+                      <ArrowRight size={13} weight="regular" className="text-white/30 shrink-0" />
                     )}
                   </button>
                 );

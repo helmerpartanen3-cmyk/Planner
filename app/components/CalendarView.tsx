@@ -281,7 +281,7 @@ export default function CalendarView({ events, onEventsChange }: Props) {
                   : "bg-[#528BFF]/15 text-[#528BFF] hover:bg-[#528BFF]/25"
               }`}
             >
-              {adding ? <X size={14} weight="light" /> : <Plus size={14} weight="light" />}
+              {adding ? <X size={14} weight="regular" /> : <Plus size={14} weight="regular" />}
               {adding ? "Cancel" : "New Event"}
             </button>
           </div>
@@ -355,7 +355,7 @@ export default function CalendarView({ events, onEventsChange }: Props) {
                       {ev.title}
                     </p>
                     <p className="text-[10px] text-white/80 mt-0.5 flex items-center gap-1">
-                      <Clock size={9} weight="light" />
+                      <Clock size={9} weight="regular" />
                       {ev.startTime} – {ev.endTime}
                     </p>
                   </div>
@@ -384,13 +384,13 @@ export default function CalendarView({ events, onEventsChange }: Props) {
                 onClick={() => navigate(-1)}
                 className="p-1 rounded-md hover:bg-white/[0.06] text-white/35 hover:text-white/65 transition-all"
               >
-                <CaretLeft size={14} weight="light" />
+                <CaretLeft size={14} weight="regular" />
               </button>
               <button
                 onClick={() => navigate(1)}
                 className="p-1 rounded-md hover:bg-white/[0.06] text-white/35 hover:text-white/65 transition-all"
               >
-                <CaretRight size={14} weight="light" />
+                <CaretRight size={14} weight="regular" />
               </button>
             </div>
             <h2 className="text-[14px] font-semibold text-white/85 truncate">

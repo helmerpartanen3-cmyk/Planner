@@ -159,7 +159,7 @@ export default function Sidebar({
           onClick={onCommandPalette}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.08] transition-all duration-200 group"
         >
-          <Command size={13} weight="light" className="text-white/25 group-hover:text-white/40 transition-colors" />
+          <Command size={13} weight="regular" className="text-white/25 group-hover:text-white/40 transition-colors" />
           <span className="text-[11px] text-white/25 group-hover:text-white/35 transition-colors flex-1 text-left">
             Quick actions
           </span>

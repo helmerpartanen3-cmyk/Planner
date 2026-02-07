@@ -388,7 +388,7 @@ export default function WeatherView() {
             >
               <MagnifyingGlass
                 size={14}
-                weight="light"
+                weight="regular"
                 className="text-white shrink-0"
               />
               <input
@@ -425,7 +425,7 @@ export default function WeatherView() {
                   <div className="flex items-center gap-1.5 mb-5">
                     <MapPin
                       size={13}
-                      weight="light"
+                      weight="regular"
                       className="text-white"
                       style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.28))" }}
                     />
@@ -585,7 +585,7 @@ export default function WeatherView() {
                 <div className="col-span-2 space-y-4">
                   <div className="rounded-4xl saturate-130 backdrop-blur-lg border border-white/[0.08] p-4 space-y-4">
                     <MiniStat
-                      icon={<ThermometerSimple size={13} weight="light" />}
+                      icon={<ThermometerSimple size={13} weight="regular" />}
                       label="Feels Like"
                       value={`${data.feelsLike}°`}
                       sub={
@@ -598,14 +598,14 @@ export default function WeatherView() {
                     />
                     <div className="h-px bg-white/[0.06]" />
                     <MiniStat
-                      icon={<Wind size={13} weight="light" />}
+                      icon={<Wind size={13} weight="regular" />}
                       label="Wind"
                       value={`${data.wind} km/h`}
                       sub={windDirection(data.windDeg)}
                     />
                     <div className="h-px bg-white/[0.06]" />
                     <MiniStat
-                      icon={<Gauge size={13} weight="light" />}
+                      icon={<Gauge size={13} weight="regular" />}
                       label="Pressure"
                       value={`${data.pressure} hPa`}
                       sub={
@@ -620,7 +620,7 @@ export default function WeatherView() {
 
                   <div className="rounded-4xl saturate-130 backdrop-blur-lg border border-white/[0.08] p-4 space-y-4">
                     <MiniStat
-                      icon={<Drop size={13} weight="light" />}
+                      icon={<Drop size={13} weight="regular" />}
                       label="Humidity"
                       value={`${data.humidity}%`}
                       sub={
@@ -633,7 +633,7 @@ export default function WeatherView() {
                     />
                     <div className="h-px bg-white/[0.06]" />
                     <MiniStat
-                      icon={<Eye size={13} weight="light" />}
+                      icon={<Eye size={13} weight="regular" />}
                       label="Visibility"
                       value={`${data.visibility} km`}
                       sub="Clear"

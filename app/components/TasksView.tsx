@@ -194,14 +194,14 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
                   : "bg-[#528BFF]/15 text-[#528BFF] hover:bg-[#528BFF]/25"
               }`}
             >
-              {adding ? <X size={14} weight="light" /> : <Plus size={14} weight="light" />}
+              {adding ? <X size={14} weight="regular" /> : <Plus size={14} weight="regular" />}
               {adding ? "Cancel" : "New Task"}
             </button>
           </div>
 
           {/* Filter bar */}
           <div className="flex items-center gap-1 mb-5">
-            <FunnelSimple size={13} weight="light" className="text-white/20 mr-1" />
+            <FunnelSimple size={13} weight="regular" className="text-white/20 mr-1" />
             {filters.map((f) => (
               <button
                 key={f.key}
@@ -236,7 +236,7 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
               />
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
-                  <CalendarBlank size={12} weight="light" className="text-white/25" />
+                  <CalendarBlank size={12} weight="regular" className="text-white/25" />
                   <input
                     type="date"
                     value={form.dueDate}
@@ -280,7 +280,7 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
           <div className="space-y-1">
             {filtered.length === 0 && (
               <div className="text-center mt-16">
-                <ListChecks size={28} weight="light" className="text-white/10 mx-auto mb-3" />
+                <ListChecks size={28} weight="regular" className="text-white/10 mx-auto mb-3" />
                 <p className="text-[13px] text-white/20">
                   {filter === "completed" ? "No completed tasks" : "No tasks here"}
                 </p>
@@ -338,7 +338,7 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
                       {task.completed ? (
                         <CheckCircle size={18} weight="fill" />
                       ) : (
-                        <Circle size={18} weight="light" />
+                        <Circle size={18} weight="regular" />
                       )}
                     </button>
 
@@ -397,7 +397,7 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
                       onClick={() => deleteTask(task.id)}
                       className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-white/[0.08] text-white/20 hover:text-red-400 transition-all shrink-0"
                     >
-                      <Trash size={13} weight="light" />
+                      <Trash size={13} weight="regular" />
                     </button>
                   </div>
 
@@ -421,7 +421,7 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
                             {sub.completed ? (
                               <CheckCircle size={14} weight="fill" />
                             ) : (
-                              <Circle size={14} weight="light" />
+                              <Circle size={14} weight="regular" />
                             )}
                           </button>
                           <span
@@ -435,14 +435,14 @@ export default function TasksView({ tasks, onTasksChange }: Props) {
                             onClick={() => deleteSubtask(task.id, sub.id)}
                             className="opacity-0 group-hover/sub:opacity-100 p-0.5 text-white/15 hover:text-red-400 transition-all"
                           >
-                            <Trash size={10} weight="light" />
+                            <Trash size={10} weight="regular" />
                           </button>
                         </div>
                       ))}
 
                       {/* Add subtask */}
                       <div className="flex items-center gap-2 mt-1 px-2">
-                        <Plus size={11} weight="light" className="text-white/15 shrink-0" />
+                        <Plus size={11} weight="regular" className="text-white/15 shrink-0" />
                         <input
                           type="text"
                           placeholder="Add subtask..."

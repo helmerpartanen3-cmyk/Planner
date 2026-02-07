@@ -37,16 +37,16 @@ export default function Titlebar({ isWeather = false }: { isWeather?: boolean })
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       >
         <TitlebarBtn onClick={handleMinimize} label="Minimize">
-          <Minus size={13} weight="light" />
+          <Minus size={13} weight="regular" />
         </TitlebarBtn>
         <TitlebarBtn
           onClick={handleMaximize}
           label={isMaximized ? "Restore" : "Maximize"}
         >
-          {isMaximized ? <Cards size={13} weight="light" /> : <Square size={13} weight="light" />}
+          {isMaximized ? <Cards size={13} weight="regular" /> : <Square size={13} weight="regular" />}
         </TitlebarBtn>
         <TitlebarBtn onClick={handleClose} label="Close" danger>
-          <X size={13} weight="light" />
+          <X size={13} weight="regular" />
         </TitlebarBtn>
       </div>
     </div>
