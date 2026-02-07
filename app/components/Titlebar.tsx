@@ -70,7 +70,7 @@ function TitlebarBtn({
       aria-label={label}
       className={`
         h-9 w-[46px] flex items-center justify-center
-        transition-colors text-white/60
+        transition-colors text-white
         ${danger
           ? "hover:bg-red-500/90 hover:text-white"
           : "hover:bg-white/[0.07]"

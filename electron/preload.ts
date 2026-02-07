@@ -12,4 +12,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.removeListener("window-maximized", handler);
     };
   },
+
+  // Persistent file store
+  storeGet: (key: string) => ipcRenderer.invoke("store-get", key),
+  storeSet: (key: string, value: unknown) => ipcRenderer.invoke("store-set", key, value),
 });

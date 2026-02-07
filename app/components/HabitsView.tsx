@@ -9,10 +9,11 @@ import {
   Fire,
   TrendUp,
 } from "@phosphor-icons/react";
+import { APP_COLORS } from "../types";
 import type { Habit } from "../types";
 
 const EMOJI_OPTIONS = ["💧", "📖", "🏃", "🧘", "💪", "🎯", "📝", "🌿", "😴", "🍎", "🧠", "⏰"];
-const COLOR_OPTIONS = ["#528BFF", "#34D399", "#A78BFA", "#FB923C", "#F87171", "#2DD4BF"];
+const COLOR_OPTIONS = APP_COLORS;
 const DAYS_LABEL = ["M", "T", "W", "T", "F", "S", "S"];
 
 interface Props {

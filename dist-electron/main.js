@@ -5,8 +5,32 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
+/* ── File-based JSON store in %APPDATA%/clarity ──────── */
+const storeDir = path_1.default.join(electron_1.app.getPath("userData"), "data");
+if (!fs_1.default.existsSync(storeDir))
+    fs_1.default.mkdirSync(storeDir, { recursive: true });
+function storeFile(key) {
+    return path_1.default.join(storeDir, `${key}.json`);
+}
+function storeGet(key) {
+    try {
+        const raw = fs_1.default.readFileSync(storeFile(key), "utf-8");
+        return JSON.parse(raw);
+    }
+    catch {
+        return null;
+    }
+}
+function storeSet(key, value) {
+    fs_1.default.writeFileSync(storeFile(key), JSON.stringify(value), "utf-8");
+}
+/* ── Window ─────────────────────────────────────────── */
 let mainWindow = null;
 const isDev = process.env.NODE_ENV !== "production";
+// IPC: persistent store (register once, before any window)
+electron_1.ipcMain.handle("store-get", (_event, key) => storeGet(key));
+electron_1.ipcMain.handle("store-set", (_event, key, value) => storeSet(key, value));
 function createWindow() {
     const { width, height } = electron_1.screen.getPrimaryDisplay().workAreaSize;
     mainWindow = new electron_1.BrowserWindow({

@@ -1,8 +1,37 @@
 import { app, BrowserWindow, ipcMain, screen } from "electron";
 import path from "path";
+import fs from "fs";
+
+/* ── File-based JSON store in %APPDATA%/clarity ──────── */
+
+const storeDir = path.join(app.getPath("userData"), "data");
+if (!fs.existsSync(storeDir)) fs.mkdirSync(storeDir, { recursive: true });
+
+function storeFile(key: string) {
+  return path.join(storeDir, `${key}.json`);
+}
+
+function storeGet(key: string): unknown | null {
+  try {
+    const raw = fs.readFileSync(storeFile(key), "utf-8");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function storeSet(key: string, value: unknown): void {
+  fs.writeFileSync(storeFile(key), JSON.stringify(value), "utf-8");
+}
+
+/* ── Window ─────────────────────────────────────────── */
 
 let mainWindow: BrowserWindow | null = null;
 const isDev = process.env.NODE_ENV !== "production";
+
+// IPC: persistent store (register once, before any window)
+ipcMain.handle("store-get", (_event, key: string) => storeGet(key));
+ipcMain.handle("store-set", (_event, key: string, value: unknown) => storeSet(key, value));
 
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;

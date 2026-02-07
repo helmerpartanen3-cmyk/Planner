@@ -10,9 +10,10 @@ import {
   MagnifyingGlass,
   Notepad,
 } from "@phosphor-icons/react";
+import { APP_COLORS } from "../types";
 import type { Note } from "../types";
 
-const NOTE_COLORS = ["#528BFF", "#34D399", "#A78BFA", "#FB923C", "#F87171", "#2DD4BF"];
+const NOTE_COLORS = APP_COLORS;
 
 interface Props {
   notes: Note[];

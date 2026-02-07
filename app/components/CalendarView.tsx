@@ -9,6 +9,7 @@ import {
   Trash,
   X,
 } from "@phosphor-icons/react";
+import { APP_COLORS } from "../types";
 import type { CalendarEvent } from "../types";
 
 /* ── constants ───────────────────────────────────────── */
@@ -23,9 +24,7 @@ const MONTHS_SHORT = [
   "Jan","Feb","Mar","Apr","May","Jun",
   "Jul","Aug","Sep","Oct","Nov","Dec",
 ];
-const EVENT_COLORS = [
-  "#528BFF","#34D399","#A78BFA","#FB923C","#F87171","#2DD4BF","#FACC15",
-];
+const EVENT_COLORS = APP_COLORS;
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_HEIGHT = 56;
@@ -347,17 +346,14 @@ export default function CalendarView({ events, onEventsChange }: Props) {
                   key={ev.id}
                   onMouseEnter={() => setEditingId(ev.id)}
                   onMouseLeave={() => setEditingId(null)}
-                  className="group relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-white/[0.035] transition-all"
+                  className="group relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all"
+                  style={{ background: ev.color }}
                 >
-                  <div
-                    className="w-[3px] shrink-0 self-stretch rounded-full min-h-[28px]"
-                    style={{ background: ev.color }}
-                  />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] text-white/75 font-medium truncate leading-tight">
+                    <p className="text-[12px] text-white font-medium truncate leading-tight">
                       {ev.title}
                     </p>
-                    <p className="text-[10px] text-white/30 mt-0.5 flex items-center gap-1">
+                    <p className="text-[10px] text-white/80 mt-0.5 flex items-center gap-1">
                       <Clock size={9} weight="light" />
                       {ev.startTime} – {ev.endTime}
                     </p>
@@ -365,9 +361,9 @@ export default function CalendarView({ events, onEventsChange }: Props) {
                   {editingId === ev.id && (
                     <button
                       onClick={() => delEvent(ev.id)}
-                      className="p-1 rounded hover:bg-white/[0.08] text-white/20 hover:text-red-400 transition-all"
+                      className="p-1.5 rounded-md hover:bg-white/20 text-white/70 hover:text-white transition-all"
                     >
-                      <Trash size={12} weight="light" />
+                      <Trash size={15} weight="regular" />
                     </button>
                   )}
                 </div>
@@ -630,21 +626,20 @@ function DayView({
             <button
               key={ev.id}
               onClick={() => onSelect(date)}
-              className="absolute rounded-md px-3 py-1.5 text-left hover:brightness-110 transition-all z-[5] border-l-[3px] overflow-hidden"
+              className="absolute rounded-md px-3 py-1.5 text-left hover:brightness-110 transition-all z-[5] overflow-hidden"
               style={{
                 top,
                 height: h,
                 left: leftPct,
                 width: `calc((100% - 68px - 12px) / ${totalCols} - ${GAP}px)`,
-                background: ev.color + "18",
-                borderLeftColor: ev.color,
+                background: ev.color,
               }}
             >
-              <p className="text-[11px] text-white/80 font-medium truncate">
+              <p className="text-[11px] text-white font-medium truncate">
                 {ev.title}
               </p>
               {h > 28 && (
-                <p className="text-[9px] text-white/30 mt-0.5">
+                <p className="text-[9px] text-white/80 mt-0.5">
                   {ev.startTime} – {ev.endTime}
                 </p>
               )}
@@ -772,21 +767,20 @@ function WeekView({
                     <button
                       key={ev.id}
                       onClick={() => onSelect(d)}
-                      className="absolute rounded-xl px-2 py-1 text-left hover:brightness-110 transition-all z-[5] border-l-[2.5px] overflow-hidden"
+                      className="absolute rounded-xl px-2 py-1 text-left hover:brightness-110 transition-all z-[5] overflow-hidden"
                       style={{
                         top,
                         height: ht,
                         left: `calc(${(col / totalCols) * 100}% + ${GAP / 2}px)`,
                         width: `calc(${100 / totalCols}% - ${GAP}px)`,
-                        background: ev.color + "18",
-                        borderLeftColor: ev.color,
+                        background: ev.color,
                       }}
                     >
-                      <p className="text-[10px] text-white/80 font-medium truncate leading-tight">
+                      <p className="text-[10px] text-white font-medium truncate leading-tight">
                         {ev.title}
                       </p>
                       {ht > 30 && (
-                        <p className="text-[8px] text-white/30 mt-0.5">
+                        <p className="text-[8px] text-white/80 mt-0.5">
                           {ev.startTime} – {ev.endTime}
                         </p>
                       )}
@@ -884,13 +878,9 @@ function MonthView({
                 <div
                   key={j}
                   className="w-full flex items-center gap-1 px-1 py-[1px] rounded-[3px] truncate"
-                  style={{ background: ev.color + "18" }}
+                  style={{ background: ev.color }}
                 >
-                  <span
-                    className="w-[4px] h-[4px] rounded-full shrink-0"
-                    style={{ background: ev.color }}
-                  />
-                  <span className="text-[9px] text-white/60 truncate leading-tight">
+                  <span className="text-[9px] text-white truncate leading-tight">
                     {ev.title}
                   </span>
                 </div>

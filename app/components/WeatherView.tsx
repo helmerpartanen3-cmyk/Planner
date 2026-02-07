@@ -557,7 +557,7 @@ export default function WeatherView() {
                                 left: `${barLeft}%`,
                                 right: `${barRight}%`,
                                 background:
-                                  "linear-gradient(90deg, #4AB8F7, #5ED46A, #F4D03F, #F09C38)",
+                                  "linear-gradient(90deg, #7DD3FC 0%, #4ADE80 40%, #FACC15 65%, #FB923C 85%, #EF4444 100%)",
                               }}
                             />
                           </div>
