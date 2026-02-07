@@ -16,7 +16,9 @@ function createWindow() {
         minHeight: 500,
         frame: false,
         titleBarStyle: "hidden",
-        backgroundColor: "#0a0a0a",
+        // 🔥 MICA EFFECT
+        backgroundMaterial: "mica",
+        backgroundColor: "#00000000", // required for Mica to render
         show: false,
         webPreferences: {
             preload: path_1.default.join(__dirname, "preload.js"),
@@ -33,7 +35,7 @@ function createWindow() {
     else {
         mainWindow.loadURL(`file://${path_1.default.join(__dirname, "../out/index.html")}`);
     }
-    // Window control IPC handlers
+    // IPC window controls
     electron_1.ipcMain.on("window-minimize", () => {
         mainWindow?.minimize();
     });
@@ -48,7 +50,7 @@ function createWindow() {
     electron_1.ipcMain.on("window-close", () => {
         mainWindow?.close();
     });
-    // Send maximize state changes to renderer
+    // Maximize state sync
     mainWindow.on("maximize", () => {
         mainWindow?.webContents.send("window-maximized", true);
     });
@@ -61,9 +63,8 @@ function createWindow() {
 }
 electron_1.app.whenReady().then(createWindow);
 electron_1.app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") {
+    if (process.platform !== "darwin")
         electron_1.app.quit();
-    }
 });
 electron_1.app.on("activate", () => {
     if (electron_1.BrowserWindow.getAllWindows().length === 0) {

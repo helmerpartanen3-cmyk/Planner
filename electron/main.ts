@@ -2,7 +2,6 @@ import { app, BrowserWindow, ipcMain, screen } from "electron";
 import path from "path";
 
 let mainWindow: BrowserWindow | null = null;
-
 const isDev = process.env.NODE_ENV !== "production";
 
 function createWindow() {
@@ -13,10 +12,16 @@ function createWindow() {
     height: Math.min(800, height),
     minWidth: 680,
     minHeight: 500,
+
     frame: false,
     titleBarStyle: "hidden",
-    backgroundColor: "#0a0a0a",
+
+    // 🔥 MICA EFFECT
+    backgroundMaterial: "mica",
+    backgroundColor: "#00000000", // required for Mica to render
+
     show: false,
+
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -31,10 +36,12 @@ function createWindow() {
   if (isDev) {
     mainWindow.loadURL("http://localhost:3000");
   } else {
-    mainWindow.loadURL(`file://${path.join(__dirname, "../out/index.html")}`);
+    mainWindow.loadURL(
+      `file://${path.join(__dirname, "../out/index.html")}`
+    );
   }
 
-  // Window control IPC handlers
+  // IPC window controls
   ipcMain.on("window-minimize", () => {
     mainWindow?.minimize();
   });
@@ -51,7 +58,7 @@ function createWindow() {
     mainWindow?.close();
   });
 
-  // Send maximize state changes to renderer
+  // Maximize state sync
   mainWindow.on("maximize", () => {
     mainWindow?.webContents.send("window-maximized", true);
   });
@@ -68,9 +75,7 @@ function createWindow() {
 app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  if (process.platform !== "darwin") app.quit();
 });
 
 app.on("activate", () => {
