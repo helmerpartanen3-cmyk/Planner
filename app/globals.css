@@ -1,7 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --titlebar-height: 36px;
+  color-scheme: dark;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 
 html,
@@ -12,9 +17,47 @@ body {
   padding: 0;
   overflow: hidden;
   background: transparent !important;
+  color: rgba(255, 255, 255, 0.9);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
-.app-content {
-  height: calc(100vh - var(--titlebar-height));
-  overflow-y: auto;
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* form elements — transparent for Mica */
+input,
+textarea,
+select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.85);
+  outline: none;
+  transition: border-color 150ms ease;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(96, 165, 250, 0.4);
+}
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* date / time picker icons */
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
 }

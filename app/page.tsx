@@ -1,8 +1,63 @@
-import { Globe } from "@phosphor-icons/react/dist/ssr";
+"use client";
+
+import { useEffect, useState } from "react";
+import Sidebar, { DEFAULT_NAV_ORDER } from "./components/Sidebar";
+import Titlebar from "./components/Titlebar";
+import CalendarView from "./components/CalendarView";
+import TasksView from "./components/TasksView";
+import TodayView from "./components/TodayView";
+import { useLocalStorage } from "./hooks/useLocalStorage";
+import type { ViewType, CalendarEvent, Task } from "./types";
 
 export default function Home() {
+  const [navOrder, setNavOrder] = useLocalStorage<ViewType[]>(
+    "clarity-nav-order",
+    DEFAULT_NAV_ORDER
+  );
+  const [view, setView] = useState<ViewType | null>(null);
+  const [events, setEvents] = useLocalStorage<CalendarEvent[]>(
+    "clarity-events",
+    []
+  );
+  const [tasks, setTasks] = useLocalStorage<Task[]>("clarity-tasks", []);
+
+  // Set the startup view to the first item in the persisted order
+  useEffect(() => {
+    if (view === null && navOrder.length > 0) {
+      setView(navOrder[0]);
+    }
+  }, [navOrder, view]);
+
+  const currentView = view ?? navOrder[0] ?? "today";
+
   return (
-    <div className="flex h-full items-center justify-center font-sans">
+    <div className="flex h-screen select-none">
+      <Sidebar
+        currentView={currentView}
+        onViewChange={setView}
+        navOrder={navOrder}
+        onNavOrderChange={setNavOrder}
+      />
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <Titlebar />
+
+        <main className="flex-1 overflow-hidden">
+          {currentView === "today" && (
+            <TodayView
+              events={events}
+              tasks={tasks}
+              onTasksChange={setTasks}
+            />
+          )}
+          {currentView === "calendar" && (
+            <CalendarView events={events} onEventsChange={setEvents} />
+          )}
+          {currentView === "tasks" && (
+            <TasksView tasks={tasks} onTasksChange={setTasks} />
+          )}
+        </main>
+      </div>
     </div>
   );
 }

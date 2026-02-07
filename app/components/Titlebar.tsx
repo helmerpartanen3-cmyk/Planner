@@ -16,95 +16,66 @@ declare global {
 
 export default function Titlebar() {
   const [isMaximized, setIsMaximized] = useState(false);
-  const [isElectron, setIsElectron] = useState(false);
 
   useEffect(() => {
     if (!window.electronAPI) return;
-
-    setIsElectron(true);
     return window.electronAPI.onMaximized(setIsMaximized);
   }, []);
 
-  const handleMinimize = useCallback(() => {
-    window.electronAPI?.minimize();
-  }, []);
-
-  const handleMaximize = useCallback(() => {
-    window.electronAPI?.maximize();
-  }, []);
-
-  const handleClose = useCallback(() => {
-    window.electronAPI?.close();
-  }, []);
-
-  if (!isElectron) return null;
+  const handleMinimize = useCallback(() => window.electronAPI?.minimize(), []);
+  const handleMaximize = useCallback(() => window.electronAPI?.maximize(), []);
+  const handleClose = useCallback(() => window.electronAPI?.close(), []);
 
   return (
-    <header
-      className="
-        h-9 w-full
-        flex items-center justify-end
-        select-none
-      "
-      style={{ WebkitAppRegion: "drag" }}
+    <div
+      className="h-9 flex items-center shrink-0 select-none"
+      style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
+      <div className="flex-1" />
       <div
-        className="flex items-center gap-1"
-        style={{ WebkitAppRegion: "no-drag" }}
+        className="flex items-center"
+        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       >
-        <TitlebarButton onClick={handleMinimize} ariaLabel="Minimize">
-          <Minus size={14} />
-        </TitlebarButton>
-
-        <TitlebarButton
+        <TitlebarBtn onClick={handleMinimize} label="Minimize">
+          <Minus size={13} weight="light" />
+        </TitlebarBtn>
+        <TitlebarBtn
           onClick={handleMaximize}
-          ariaLabel={isMaximized ? "Restore" : "Maximize"}
+          label={isMaximized ? "Restore" : "Maximize"}
         >
-          {isMaximized ? (
-            <Cards size={14} />
-          ) : (
-            <Square size={14} />
-          )}
-        </TitlebarButton>
-
-        <TitlebarButton
-          onClick={handleClose}
-          ariaLabel="Close"
-          danger
-        >
-          <X size={14} />
-        </TitlebarButton>
+          {isMaximized ? <Cards size={13} weight="light" /> : <Square size={13} weight="light" />}
+        </TitlebarBtn>
+        <TitlebarBtn onClick={handleClose} label="Close" danger>
+          <X size={13} weight="light" />
+        </TitlebarBtn>
       </div>
-    </header>
+    </div>
   );
 }
 
-function TitlebarButton({
+function TitlebarBtn({
   children,
   onClick,
-  ariaLabel,
+  label,
   danger = false,
 }: {
   children: React.ReactNode;
   onClick: () => void;
-  ariaLabel: string;
+  label: string;
   danger?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
-      aria-label={ariaLabel}
+      aria-label={label}
       className={`
-        h-9 w-10
-        flex items-center justify-center
-        transition-colors
-        text-white
-        ${
-          danger
-            ? "hover:bg-red-500/90 hover:text-white"
-            : "hover:bg-white/10"
+        h-9 w-[46px] flex items-center justify-center
+        transition-colors text-white/60
+        ${danger
+          ? "hover:bg-red-500/90 hover:text-white"
+          : "hover:bg-white/[0.07]"
         }
-        active:bg-white/20
+        active:bg-white/[0.12]
       `}
     >
       {children}

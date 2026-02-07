@@ -1,21 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
-import Titlebar from "./components/Titlebar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const geist = Geist({
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: "Clarity",
-  description: "Clarity Desktop App",
+  description: "Clarity – Calendar & Life Manager",
 };
 
 export default function RootLayout({
@@ -25,11 +18,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Titlebar />
-        <div className="app-content">{children}</div>
+      <body className={`${geist.className} antialiased`}>
+        {children}
       </body>
     </html>
   );
