@@ -16,4 +16,4 @@ export interface Task {
   createdAt: string;
 }
 
-export type ViewType = "today" | "calendar" | "tasks";
+export type ViewType = "today" | "calendar" | "tasks" | "weather";

@@ -6,14 +6,33 @@ import Titlebar from "./components/Titlebar";
 import CalendarView from "./components/CalendarView";
 import TasksView from "./components/TasksView";
 import TodayView from "./components/TodayView";
+import WeatherView from "./components/WeatherView";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { ViewType, CalendarEvent, Task } from "./types";
 
 export default function Home() {
-  const [navOrder, setNavOrder] = useLocalStorage<ViewType[]>(
+  const [navOrderRaw, setNavOrder] = useLocalStorage<ViewType[]>(
     "clarity-nav-order",
     DEFAULT_NAV_ORDER
   );
+
+  // Ensure persisted order always includes all default items and no stale ones
+  const navOrder = (() => {
+    const valid = navOrderRaw.filter((id) => DEFAULT_NAV_ORDER.includes(id));
+    const missing = DEFAULT_NAV_ORDER.filter((id) => !valid.includes(id));
+    return [...valid, ...missing];
+  })();
+
+  // Persist the corrected order if it differs
+  useEffect(() => {
+    if (
+      navOrder.length !== navOrderRaw.length ||
+      navOrder.some((id, i) => id !== navOrderRaw[i])
+    ) {
+      setNavOrder(navOrder);
+    }
+  }, [navOrder, navOrderRaw, setNavOrder]);
+
   const [view, setView] = useState<ViewType | null>(null);
   const [events, setEvents] = useLocalStorage<CalendarEvent[]>(
     "clarity-events",
@@ -56,6 +75,7 @@ export default function Home() {
           {currentView === "tasks" && (
             <TasksView tasks={tasks} onTasksChange={setTasks} />
           )}
+          {currentView === "weather" && <WeatherView />}
         </main>
       </div>
     </div>

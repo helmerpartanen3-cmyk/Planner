@@ -1,15 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CalendarBlank, CheckSquare, Sun, CalendarDot  } from "@phosphor-icons/react";
+import { CalendarBlank, Check, Sun, CalendarDot, CloudSun } from "@phosphor-icons/react";
 import type { ViewType } from "../types";
 
-export const DEFAULT_NAV_ORDER: ViewType[] = ["today", "calendar", "tasks"];
+export const DEFAULT_NAV_ORDER: ViewType[] = ["today", "calendar", "tasks", "weather"];
 
 const NAV_META: Record<ViewType, { label: string; icon: typeof Sun }> = {
-  today: { label: "Today", icon: CalendarDot  },
+  today: { label: "Today", icon: CalendarDot },
   calendar: { label: "Calendar", icon: CalendarBlank },
-  tasks: { label: "Tasks", icon: CheckSquare },
+  tasks: { label: "Tasks", icon: Check },
+  weather: { label: "Weather", icon: CloudSun },
 };
 
 interface SidebarProps {
