@@ -56,6 +56,10 @@ export const oklabToRgb = (lab: Oklab): Rgb => {
 };
 
 export const mixOklab = (a: Rgb, b: Rgb, t: number): Rgb => {
+  // Fast path: skip conversion for trivial blend factors
+  if (t <= 0.001) return [a[0], a[1], a[2]];
+  if (t >= 0.999) return [b[0], b[1], b[2]];
+
   const la = rgbToOklab(a);
   const lb = rgbToOklab(b);
   const mix: Oklab = [
@@ -86,11 +90,31 @@ export const clampRgb = (rgb: Rgb): Rgb => [
   clamp(rgb[2])
 ];
 
-// Optimized for high-frequency calls
+// LRU-style cache for toCssRgb (bounded to prevent memory leaks)
+const cssRgbCache = new Map<string, string>();
+const CSS_CACHE_MAX = 512;
+
+// Optimized for high-frequency calls with caching
 export const toCssRgb = (rgb: Rgb, alpha = 1) => {
   // Bitwise OR 0 is slightly faster than Math.floor for positive numbers
   const r = (clamp(rgb[0]) * 255) | 0;
   const g = (clamp(rgb[1]) * 255) | 0;
   const b = (clamp(rgb[2]) * 255) | 0;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  // Bucket alpha to 2 decimal places for cache hits
+  const a = Math.round(alpha * 100) / 100;
+
+  const key = `${r},${g},${b},${a}`;
+  const cached = cssRgbCache.get(key);
+  if (cached) return cached;
+
+  const result = `rgba(${r}, ${g}, ${b}, ${a})`;
+
+  // Evict oldest entries if cache grows too large
+  if (cssRgbCache.size >= CSS_CACHE_MAX) {
+    const firstKey = cssRgbCache.keys().next().value;
+    if (firstKey !== undefined) cssRgbCache.delete(firstKey);
+  }
+
+  cssRgbCache.set(key, result);
+  return result;
 };

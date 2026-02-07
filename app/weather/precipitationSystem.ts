@@ -65,8 +65,8 @@ export class PrecipitationSystem {
   private lastTime: number = performance.now();
 
   // Wind calculation
-  private windAngleRadians: number;
-  private windStrength: number;
+  private windAngleRadians!: number;
+  private windStrength!: number;
 
   constructor(width: number, height: number, windSpeed: number = 0, windDirection: number = 12) {
     this.width = width;
@@ -84,15 +84,18 @@ export class PrecipitationSystem {
   update(deltaTime: number, precipitationType: 'rain' | 'snow' | 'storm' | 'none', intensity: 'light' | 'moderate' | 'heavy' = 'moderate') {
     this.noiseGenerator.update(deltaTime, this.config.motionNoise.speed);
 
-    // Update existing particles
-    for (let i = this.particles.length - 1; i >= 0; i--) {
+    // Update existing particles (swap-and-pop for O(1) removal instead of O(n) splice)
+    let i = 0;
+    while (i < this.particles.length) {
       const p = this.particles[i];
       p.age += deltaTime;
 
       // Remove particle if lifetime exceeded or off-screen
       if (p.age >= p.lifetime || p.y > this.height) {
-        this.particles.splice(i, 1);
-        continue;
+        // Swap with last element and pop (O(1) removal)
+        this.particles[i] = this.particles[this.particles.length - 1];
+        this.particles.pop();
+        continue; // Re-check this index (now holds the swapped element)
       }
 
       // Update position with velocity
@@ -134,6 +137,8 @@ export class PrecipitationSystem {
       }
 
       p.opacity *= this.config.rendering.softEdges ? fadeMultiplier : 1;
+
+      i++; // Only advance when particle was kept
     }
 
     // Spawn new particles

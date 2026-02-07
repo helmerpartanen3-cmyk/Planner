@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import {
   Sun,
   Cloud,
@@ -20,15 +20,30 @@ import {
   Moon,
 } from "@phosphor-icons/react";
 
+import { useSkyBackground } from "../weather/useSkyBackground";
+import type { SkyStateInput } from "../weather/skyTypes";
+import {
+  getSunPosition,
+  estimateSunriseSunset,
+  estimateMoonPhase,
+  estimateMoonElevation,
+  getSeason,
+  getLocalTimeString,
+} from "../weather/skyAstronomy";
+
 /* ── types ───────────────────────────────────────────── */
 
 interface WeatherData {
   location: string;
   country: string;
+  latitude: number;
+  longitude: number;
   temp: number;
   feelsLike: number;
   description: string;
   icon: string;
+  weatherCode: number;
+  cloudCover: number;
   humidity: number;
   wind: number;
   windDeg: number;
@@ -93,6 +108,31 @@ function WeatherIcon({
   }
 }
 
+/* ── WMO → sky weather mapping ───────────────────────── */
+
+function wmoToSkyWeather(code: number, cloudCover: number, windSpeed: number, windDeg: number): SkyStateInput["weather"] {
+  let precipitation: "none" | "rain" | "snow" | "storm" = "none";
+  let fogDensity = 0;
+
+  if (code >= 95) precipitation = "storm";
+  else if (code >= 80 && code <= 82) precipitation = "rain";
+  else if (code >= 85 && code <= 86) precipitation = "snow";
+  else if (code >= 71 && code <= 77) precipitation = "snow";
+  else if (code >= 61 && code <= 67) precipitation = "rain";
+  else if (code >= 51 && code <= 57) precipitation = "rain";
+  else if (code >= 40 && code <= 48) fogDensity = code <= 45 ? 0.5 : 0.8;
+
+  return {
+    cloudCover: cloudCover / 100, // API returns 0-100
+    precipitation,
+    fogDensity,
+    visibility: fogDensity > 0 ? 2 : 10,
+    windSpeed,
+    windDirection: windDeg,
+    weatherCode: code,
+  };
+}
+
 /* ── component ───────────────────────────────────────── */
 
 export default function WeatherView() {
@@ -108,6 +148,50 @@ export default function WeatherView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const hourlyRef = useRef<HTMLDivElement>(null);
+
+  /* ── build SkyStateInput from weather data ────────── */
+  const skyState = useMemo<SkyStateInput>(() => {
+    if (!data) {
+      // Default state (night sky) while loading
+      return {
+        time: { localTime: "12:00", sunrise: "07:00", sunset: "18:00" },
+        astronomy: { sunElevation: 45, sunAzimuth: 180, moonElevation: -10, moonPhase: 0.5 },
+        weather: { cloudCover: 0.2, precipitation: "none", fogDensity: 0, visibility: 10 },
+        environment: { latitude: 60, longitude: 25, season: "winter" },
+      };
+    }
+
+    const now = new Date();
+    const { latitude, longitude } = data;
+    const sunPos = getSunPosition(now, latitude, longitude);
+    const moonPhase = estimateMoonPhase(now);
+    const moonElevation = estimateMoonElevation(now, latitude, moonPhase);
+    const season = getSeason(now, latitude);
+    const localTime = getLocalTimeString(now);
+    const sunTimes = estimateSunriseSunset(now, latitude, longitude);
+
+    return {
+      time: {
+        localTime,
+        sunrise: sunTimes.sunrise,
+        sunset: sunTimes.sunset,
+      },
+      astronomy: {
+        sunElevation: sunPos.elevation,
+        sunAzimuth: sunPos.azimuth,
+        moonElevation,
+        moonPhase,
+      },
+      weather: wmoToSkyWeather(data.weatherCode, data.cloudCover, data.wind, data.windDeg),
+      environment: {
+        latitude,
+        longitude,
+        season,
+      },
+    };
+  }, [data]);
+
+  const { canvasRef, cloudsCanvasRef } = useSkyBackground(skyState);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,7 +216,7 @@ export default function WeatherView() {
 
         const wxRes = await fetch(
           `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
-            `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure` +
+            `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,cloud_cover` +
             `&hourly=temperature_2m,weather_code` +
             `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset` +
             `&timezone=auto&forecast_days=7`,
@@ -198,10 +282,14 @@ export default function WeatherView() {
         setData({
           location: name,
           country,
+          latitude,
+          longitude,
           temp: Math.round(wx.current.temperature_2m),
           feelsLike: Math.round(wx.current.apparent_temperature),
           description: describeWMO(wx.current.weather_code),
           icon: wmoToIcon(wx.current.weather_code),
+          weatherCode: wx.current.weather_code,
+          cloudCover: wx.current.cloud_cover ?? 0,
           humidity: wx.current.relative_humidity_2m,
           wind: Math.round(wx.current.wind_speed_10m),
           windDeg: wx.current.wind_direction_10m,
@@ -262,192 +350,162 @@ export default function WeatherView() {
   const hSpan = hMax - hMin || 1;
 
   return (
-    <div className="h-full overflow-y-auto bg-neutral-900">
-      <div className="max-w-[680px] mx-auto px-8 py-8 space-y-4">
-        {/* ── search ─────────────────────────────────── */}
-        <div className="flex justify-center mb-2">
-          <div
-            className={`flex items-center gap-2.5 px-4 py-2 rounded-full transition-all duration-300 w-[260px] ${
-              searchFocused
-                ? "bg-white/[0.08] border border-white/[0.14] shadow-lg shadow-black/20"
-                : "bg-white/[0.04] border border-white/[0.06]"
-            }`}
-          >
-            <MagnifyingGlass
-              size={14}
-              weight="light"
-              className="text-white/20 shrink-0"
-            />
-            <input
-              type="text"
-              placeholder="Search city..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              className="flex-1 text-[12px] !bg-transparent !border-none !ring-0 !outline-none text-white/80 placeholder:text-white/20"
-            />
-          </div>
-        </div>
+    <div className="h-full relative overflow-hidden">
+      {/* ── sky background canvases ──────────────────── */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full"
+        style={{ zIndex: 0 }}
+      />
+      <canvas
+        ref={cloudsCanvasRef}
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{ zIndex: 1 }}
+      />
 
-        {loading && !data && (
-          <div className="flex items-center justify-center py-32">
-            <div className="w-5 h-5 border-[1.5px] border-white/[0.06] border-t-white/30 rounded-full animate-spin" />
-          </div>
-        )}
-
-        {error && (
-          <div className="text-center py-24">
-            <p className="text-[12px] text-red-400/50">{error}</p>
-          </div>
-        )}
-
-        {data && (
-          <>
-            {/* ── hero ───────────────────────────────── */}
-            <div className="relative pt-4 pb-6">
-              <div className="flex flex-col items-center text-center">
-                {/* location */}
-                <div className="flex items-center gap-1.5 mb-5">
-                  <MapPin
-                    size={13}
-                    weight="light"
-                    className="text-white/30"
-                  />
-                  <span className="text-[13px] text-white/40 tracking-wide">
-                    {data.location}
-                  </span>
-                  <span className="text-[11px] text-white/20">
-                    {data.country}
-                  </span>
-                </div>
-
-                {/* icon + temp */}
-                <div className="relative flex items-center justify-center mb-4">
-                  <span className="text-[112px] font-[200] text-white tracking-tighter leading-none tabular-nums">
-                    {data.temp}°
-                  </span>
-                </div>
-
-                {/* description */}
-                <p className="text-[14px] text-white/50 capitalize mb-1.5">
-                  {data.description}
-                </p>
-
-                {/* high / low */}
-                <div className="flex items-center gap-3 text-[12px] tabular-nums text-white/30">
-                  <span>H {data.high}°</span>
-                  <span className="w-px h-2.5 bg-white/10" />
-                  <span>L {data.low}°</span>
-                </div>
-              </div>
+      {/* ── scrollable content over sky ──────────────── */}
+      <div className="relative h-full overflow-y-auto" style={{ zIndex: 2 }}>
+        <div className="max-w-[680px] mx-auto px-8 py-8 space-y-4">
+          {/* ── search ─────────────────────────────────── */}
+          <div className="flex justify-center mb-2">
+            <div
+              className={`flex items-center gap-2.5 px-4 py-2 rounded-full transition-all duration-300 w-[260px] backdrop-blur-md ${
+                searchFocused
+                  ? "bg-black/20 border border-white/[0.18] shadow-lg shadow-black/20"
+                  : "bg-black/10 border border-white/[0.08]"
+              }`}
+            >
+              <MagnifyingGlass
+                size={14}
+                weight="light"
+                className="text-white/40 shrink-0"
+              />
+              <input
+                type="text"
+                placeholder="Search city..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                className="flex-1 text-[12px] !bg-transparent !border-none !ring-0 !outline-none text-white/90 placeholder:text-white/30"
+              />
             </div>
+          </div>
 
-            {/* ── hourly ─────────────────────────────── */}
-            <div className="rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden">
-              <div className="px-5 pt-3.5 pb-2">
-                <span className="text-[10px] uppercase tracking-[0.12em] text-white/20 font-medium">
-                  24-Hour Forecast
-                </span>
-              </div>
-              <div
-                ref={hourlyRef}
-                className="flex overflow-x-auto pb-4 pt-1 px-2 scrollbar-none"
-                style={{ scrollbarWidth: "none" }}
-              >
-                {data.hourly.map((h, i) => {
-                  const pct = ((h.temp - hMin) / hSpan) * 100;
-                  const isNow = i === 0;
+          {loading && !data && (
+            <div className="flex items-center justify-center py-32">
+              <div className="w-5 h-5 border-[1.5px] border-white/[0.1] border-t-white/40 rounded-full animate-spin" />
+            </div>
+          )}
 
-                  return (
-                    <div
-                      key={i}
-                      className="flex flex-col items-center min-w-[52px] shrink-0 group"
+          {error && (
+            <div className="text-center py-24">
+              <p className="text-[12px] text-red-300/60">{error}</p>
+            </div>
+          )}
+
+          {data && (
+            <>
+              {/* ── hero ───────────────────────────────── */}
+              <div className="relative pt-4 pb-6">
+                <div className="flex flex-col items-center text-center">
+                  {/* location */}
+                  <div className="flex items-center gap-1.5 mb-5">
+                    <MapPin
+                      size={13}
+                      weight="light"
+                      className="text-white/50"
+                    />
+                    <span className="text-[13px] text-white/60 tracking-wide">
+                      {data.location}
+                    </span>
+                    <span className="text-[11px] text-white/35">
+                      {data.country}
+                    </span>
+                  </div>
+
+                  {/* temp */}
+                  <div className="relative flex items-center justify-center mb-4">
+                    <span
+                      className="text-[112px] font-[200] text-white tracking-tighter leading-none tabular-nums"
+                      style={{ textShadow: "0 2px 40px rgba(0,0,0,0.15)" }}
                     >
-                      <span
-                        className={`text-[10px] tabular-nums mb-2 ${
-                          isNow
-                            ? "text-blue-400/80 font-semibold"
-                            : "text-white/20"
-                        }`}
-                      >
-                        {h.time}
-                      </span>
-                      <div
-                        className={`mb-2 ${isNow ? "text-white/50" : "text-white/20 group-hover:text-white/35"} transition-colors`}
-                      >
-                        <WeatherIcon code={h.icon} size={16} />
-                      </div>
-                      {/* mini bar */}
-                      <div className="w-[3px] rounded-full bg-white/[0.04] h-8 relative mb-2">
-                        <div
-                          className={`absolute bottom-0 w-full rounded-full transition-all ${
-                            isNow
-                              ? "bg-blue-400/40"
-                              : "bg-white/[0.08] group-hover:bg-white/[0.15]"
-                          }`}
-                          style={{ height: `${Math.max(15, pct)}%` }}
-                        />
-                      </div>
-                      <span
-                        className={`text-[11px] tabular-nums ${
-                          isNow
-                            ? "text-white/80 font-semibold"
-                            : "text-white/35 group-hover:text-white/55"
-                        } transition-colors`}
-                      >
-                        {h.temp}°
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                      {data.temp}°
+                    </span>
+                  </div>
 
-            {/* ── two-col: forecast + details ────────── */}
-            <div className="grid grid-cols-5 gap-4">
-              {/* forecast (3 cols) */}
-              <div className="col-span-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden">
+                  {/* description */}
+                  <p
+                    className="text-[14px] text-white/70 capitalize mb-1.5"
+                    style={{ textShadow: "0 1px 8px rgba(0,0,0,0.2)" }}
+                  >
+                    {data.description}
+                  </p>
+
+                  {/* high / low */}
+                  <div className="flex items-center gap-3 text-[12px] tabular-nums text-white/45">
+                    <span>H {data.high}°</span>
+                    <span className="w-px h-2.5 bg-white/15" />
+                    <span>L {data.low}°</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── hourly ─────────────────────────────── */}
+              <div className="rounded-2xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
                 <div className="px-5 pt-3.5 pb-2">
-                  <span className="text-[10px] uppercase tracking-[0.12em] text-white/20 font-medium">
-                    6-Day Forecast
+                  <span className="text-[10px] uppercase tracking-[0.12em] text-white/30 font-medium">
+                    24-Hour Forecast
                   </span>
                 </div>
-                <div className="px-2 pb-2">
-                  {data.forecast.map((d, i) => {
-                    const barLeft =
-                      ((d.low - rangeMin) / rangeSpan) * 100;
-                    const barRight =
-                      100 - ((d.high - rangeMin) / rangeSpan) * 100;
+                <div
+                  ref={hourlyRef}
+                  className="flex overflow-x-auto pb-4 pt-1 px-2 scrollbar-none"
+                  style={{ scrollbarWidth: "none" }}
+                >
+                  {data.hourly.map((h, i) => {
+                    const pct = ((h.temp - hMin) / hSpan) * 100;
+                    const isNow = i === 0;
 
                     return (
                       <div
                         key={i}
-                        className="flex items-center px-3 py-[9px] gap-3 rounded-lg hover:bg-white/[0.02] transition-colors"
+                        className="flex flex-col items-center min-w-[52px] shrink-0 group"
                       >
-                        <span className="text-[11px] text-white/35 w-8 shrink-0 font-medium">
-                          {d.day}
+                        <span
+                          className={`text-[10px] tabular-nums mb-2 ${
+                            isNow
+                              ? "text-white font-semibold"
+                              : "text-white/30"
+                          }`}
+                        >
+                          {h.time}
                         </span>
-                        <div className="text-white/20 w-4 shrink-0 flex justify-center">
-                          <WeatherIcon code={d.icon} size={14} />
+                        <div
+                          className={`mb-2 ${isNow ? "text-white/70" : "text-white/30 group-hover:text-white/45"} transition-colors`}
+                        >
+                          <WeatherIcon code={h.icon} size={16} />
                         </div>
-                        <span className="text-[10px] text-white/20 tabular-nums w-6 text-right shrink-0">
-                          {d.low}°
-                        </span>
-                        <div className="flex-1 h-[3px] rounded-full bg-white/[0.04] relative mx-1.5 min-w-[60px]">
+                        {/* mini bar */}
+                        <div className="w-[3px] rounded-full bg-white/[0.06] h-8 relative mb-2">
                           <div
-                            className="absolute inset-y-0 rounded-full"
-                            style={{
-                              left: `${barLeft}%`,
-                              right: `${barRight}%`,
-                              background:
-                                "linear-gradient(90deg, rgba(96,165,250,0.35), rgba(234,179,8,0.35))",
-                            }}
+                            className={`absolute bottom-0 w-full rounded-full transition-all ${
+                              isNow
+                                ? "bg-white/40"
+                                : "bg-white/[0.1] group-hover:bg-white/[0.2]"
+                            }`}
+                            style={{ height: `${Math.max(15, pct)}%` }}
                           />
                         </div>
-                        <span className="text-[10px] text-white/45 tabular-nums w-6 text-right shrink-0 font-medium">
-                          {d.high}°
+                        <span
+                          className={`text-[11px] tabular-nums ${
+                            isNow
+                              ? "text-white/90 font-semibold"
+                              : "text-white/40 group-hover:text-white/60"
+                          } transition-colors`}
+                        >
+                          {h.temp}°
                         </span>
                       </div>
                     );
@@ -455,108 +513,159 @@ export default function WeatherView() {
                 </div>
               </div>
 
-              {/* detail stack (2 cols) */}
-              <div className="col-span-2 space-y-4">
-                <div className="rounded-2xl bg-white/[0.03] border border-white/[0.05] p-4 space-y-4">
-                  <MiniStat
-                    icon={<ThermometerSimple size={13} weight="light" />}
-                    label="Feels Like"
-                    value={`${data.feelsLike}°`}
-                    sub={
-                      data.feelsLike > data.temp
-                        ? "Warmer than actual"
-                        : data.feelsLike < data.temp
-                          ? "Cooler than actual"
-                          : "Similar to actual"
-                    }
-                  />
-                  <div className="h-px bg-white/[0.04]" />
-                  <MiniStat
-                    icon={<Wind size={13} weight="light" />}
-                    label="Wind"
-                    value={`${data.wind} km/h`}
-                    sub={windDirection(data.windDeg)}
-                  />
-                  <div className="h-px bg-white/[0.04]" />
-                  <MiniStat
-                    icon={<Gauge size={13} weight="light" />}
-                    label="Pressure"
-                    value={`${data.pressure} hPa`}
-                    sub={
-                      data.pressure > 1020
-                        ? "High"
-                        : data.pressure < 1000
-                          ? "Low"
-                          : "Normal"
-                    }
-                  />
+              {/* ── two-col: forecast + details ────────── */}
+              <div className="grid grid-cols-5 gap-4">
+                {/* forecast (3 cols) */}
+                <div className="col-span-3 rounded-2xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
+                  <div className="px-5 pt-3.5 pb-2">
+                    <span className="text-[10px] uppercase tracking-[0.12em] text-white/30 font-medium">
+                      6-Day Forecast
+                    </span>
+                  </div>
+                  <div className="px-2 pb-2">
+                    {data.forecast.map((d, i) => {
+                      const barLeft =
+                        ((d.low - rangeMin) / rangeSpan) * 100;
+                      const barRight =
+                        100 - ((d.high - rangeMin) / rangeSpan) * 100;
+
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center px-3 py-[9px] gap-3 rounded-lg hover:bg-white/[0.04] transition-colors"
+                        >
+                          <span className="text-[11px] text-white/50 w-8 shrink-0 font-medium">
+                            {d.day}
+                          </span>
+                          <div className="text-white/30 w-4 shrink-0 flex justify-center">
+                            <WeatherIcon code={d.icon} size={14} />
+                          </div>
+                          <span className="text-[10px] text-white/25 tabular-nums w-6 text-right shrink-0">
+                            {d.low}°
+                          </span>
+                          <div className="flex-1 h-[3px] rounded-full bg-white/[0.06] relative mx-1.5 min-w-[60px]">
+                            <div
+                              className="absolute inset-y-0 rounded-full"
+                              style={{
+                                left: `${barLeft}%`,
+                                right: `${barRight}%`,
+                                background:
+                                  "linear-gradient(90deg, rgba(130,180,255,0.4), rgba(255,200,80,0.4))",
+                              }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-white/55 tabular-nums w-6 text-right shrink-0 font-medium">
+                            {d.high}°
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="rounded-2xl bg-white/[0.03] border border-white/[0.05] p-4 space-y-4">
-                  <MiniStat
-                    icon={<Drop size={13} weight="light" />}
-                    label="Humidity"
-                    value={`${data.humidity}%`}
-                    sub={
-                      data.humidity > 70
-                        ? "High"
-                        : data.humidity < 30
-                          ? "Dry"
-                          : "Comfortable"
-                    }
-                  />
-                  <div className="h-px bg-white/[0.04]" />
-                  <MiniStat
-                    icon={<Eye size={13} weight="light" />}
-                    label="Visibility"
-                    value={`${data.visibility} km`}
-                    sub="Clear"
-                  />
-                </div>
-              </div>
-            </div>
+                {/* detail stack (2 cols) */}
+                <div className="col-span-2 space-y-4">
+                  <div className="rounded-2xl bg-black/15 backdrop-blur-xl border border-white/[0.08] p-4 space-y-4">
+                    <MiniStat
+                      icon={<ThermometerSimple size={13} weight="light" />}
+                      label="Feels Like"
+                      value={`${data.feelsLike}°`}
+                      sub={
+                        data.feelsLike > data.temp
+                          ? "Warmer than actual"
+                          : data.feelsLike < data.temp
+                            ? "Cooler than actual"
+                            : "Similar to actual"
+                      }
+                    />
+                    <div className="h-px bg-white/[0.06]" />
+                    <MiniStat
+                      icon={<Wind size={13} weight="light" />}
+                      label="Wind"
+                      value={`${data.wind} km/h`}
+                      sub={windDirection(data.windDeg)}
+                    />
+                    <div className="h-px bg-white/[0.06]" />
+                    <MiniStat
+                      icon={<Gauge size={13} weight="light" />}
+                      label="Pressure"
+                      value={`${data.pressure} hPa`}
+                      sub={
+                        data.pressure > 1020
+                          ? "High"
+                          : data.pressure < 1000
+                            ? "Low"
+                            : "Normal"
+                      }
+                    />
+                  </div>
 
-            {/* ── sunrise / sunset strip ──────────────── */}
-            <div className="rounded-2xl bg-white/[0.03] border border-white/[0.05] overflow-hidden">
-              <div className="flex">
-                <div className="flex-1 p-4 flex items-center gap-3 border-r border-white/[0.04]">
-                  <div className="w-8 h-8 rounded-full bg-amber-400/[0.06] flex items-center justify-center">
-                    <SunHorizon
-                      size={16}
-                      weight="light"
-                      className="text-amber-400/50"
+                  <div className="rounded-2xl bg-black/15 backdrop-blur-xl border border-white/[0.08] p-4 space-y-4">
+                    <MiniStat
+                      icon={<Drop size={13} weight="light" />}
+                      label="Humidity"
+                      value={`${data.humidity}%`}
+                      sub={
+                        data.humidity > 70
+                          ? "High"
+                          : data.humidity < 30
+                            ? "Dry"
+                            : "Comfortable"
+                      }
                     />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.1em] text-white/20 mb-0.5">
-                      Sunrise
-                    </p>
-                    <p className="text-[14px] text-white/70 tabular-nums font-medium">
-                      {data.sunrise}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex-1 p-4 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-indigo-400/[0.06] flex items-center justify-center">
-                    <Moon
-                      size={16}
-                      weight="light"
-                      className="text-indigo-400/50"
+                    <div className="h-px bg-white/[0.06]" />
+                    <MiniStat
+                      icon={<Eye size={13} weight="light" />}
+                      label="Visibility"
+                      value={`${data.visibility} km`}
+                      sub="Clear"
                     />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.1em] text-white/20 mb-0.5">
-                      Sunset
-                    </p>
-                    <p className="text-[14px] text-white/70 tabular-nums font-medium">
-                      {data.sunset}
-                    </p>
                   </div>
                 </div>
               </div>
-            </div>
-          </>
-        )}
+
+              {/* ── sunrise / sunset strip ──────────────── */}
+              <div className="rounded-2xl bg-black/15 backdrop-blur-xl border border-white/[0.08] overflow-hidden">
+                <div className="flex">
+                  <div className="flex-1 p-4 flex items-center gap-3 border-r border-white/[0.06]">
+                    <div className="w-8 h-8 rounded-full bg-amber-400/[0.1] flex items-center justify-center">
+                      <SunHorizon
+                        size={16}
+                        weight="light"
+                        className="text-amber-300/60"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.1em] text-white/25 mb-0.5">
+                        Sunrise
+                      </p>
+                      <p className="text-[14px] text-white/80 tabular-nums font-medium">
+                        {data.sunrise}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex-1 p-4 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-indigo-400/[0.1] flex items-center justify-center">
+                      <Moon
+                        size={16}
+                        weight="light"
+                        className="text-indigo-300/60"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.1em] text-white/25 mb-0.5">
+                        Sunset
+                      </p>
+                      <p className="text-[14px] text-white/80 tabular-nums font-medium">
+                        {data.sunset}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -578,16 +687,16 @@ function MiniStat({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <span className="text-white/15">{icon}</span>
-        <span className="text-[10px] uppercase tracking-[0.1em] text-white/20 font-medium">
+        <span className="text-white/25">{icon}</span>
+        <span className="text-[10px] uppercase tracking-[0.1em] text-white/30 font-medium">
           {label}
         </span>
       </div>
       <div className="text-right">
-        <span className="text-[13px] text-white/70 tabular-nums font-medium">
+        <span className="text-[13px] text-white/80 tabular-nums font-medium">
           {value}
         </span>
-        {sub && <p className="text-[9px] text-white/20 mt-0.5">{sub}</p>}
+        {sub && <p className="text-[9px] text-white/25 mt-0.5">{sub}</p>}
       </div>
     </div>
   );

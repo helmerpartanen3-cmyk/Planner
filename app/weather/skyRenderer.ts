@@ -81,9 +81,10 @@ export const renderSkyGradient = (
   // 4) Lightning (only during explicit storms)
   const isStorm = state.weather.precipitation === 'storm';
   const stormIntensity = isStorm ? 1 : 0;
-  let lightningEffect = null;
+  let lightningEffect: { intensity: number; centers: { x: number; y: number; intensity: number }[]; radius: number; color?: string } | undefined = undefined;
   if (isStorm) {
-    lightningEffect = drawThunderstormWithEffect(ctx, width, height, stormIntensity, layers.midSky, time);
+    const result = drawThunderstormWithEffect(ctx, width, height, stormIntensity, layers.midSky, time);
+    if (result) lightningEffect = result;
   }
 
   // 5) Atmosphere over sky/sun/stars/lightning

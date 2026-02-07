@@ -1,6 +1,6 @@
 import { Star } from './skyStars';
 import { createStarField } from './skyStars';
-import { clamp01, mixColor, smoothstep } from './skyUtils';
+import { clamp01, mixColor } from './skyUtils';
 
 /* --------------------------------------------------
    Types
@@ -11,8 +11,6 @@ type StarEx = Star & {
   radius: number;
   intensity: number;
   extinction: number;
-  phase: number;
-  glowPhase: number;
 };
 
 /* --------------------------------------------------
@@ -25,8 +23,6 @@ let starFieldH = 0;
 
 let starLayerCanvas: HTMLCanvasElement | null = null;
 let starLayerCtx: CanvasRenderingContext2D | null = null;
-
-let twinkleIndices: number[] = [];
 
 type SpriteKey = string;
 const starSprites = new Map<SpriteKey, HTMLCanvasElement>();
@@ -129,9 +125,7 @@ export const ensureStarField = (width: number, height: number) => {
       rgb: sampleStarColor(h),
       radius: Math.max(0.5, Math.min(2.0, s.size * 1.2)),
       intensity,
-      extinction: starExtinction(s.y, height),
-      phase: Math.random() * Math.PI * 2,
-      glowPhase: Math.random() * Math.PI * 2
+      extinction: starExtinction(s.y, height)
     };
   });
 
@@ -161,13 +155,6 @@ export const ensureStarField = (width: number, height: number) => {
 
   starLayerCtx.globalAlpha = 1;
   starLayerCtx.imageSmoothingEnabled = true;
-
-  twinkleIndices = [];
-  for (let i = 0; i < starData.length; i++) {
-    if (Math.random() < 0.12 + starData[i].intensity * 0.12) {
-      twinkleIndices.push(i);
-    }
-  }
 };
 
 /* --------------------------------------------------
@@ -201,69 +188,6 @@ export const drawStars = (
   ctx.globalCompositeOperation = 'lighter';
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(starLayerCanvas, 0, 0);
-  ctx.imageSmoothingEnabled = true;
-  ctx.restore();
-
-  // ---------- TWINKLE + GLOW OVERLAY ----------
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.imageSmoothingEnabled = false;
-
-  const timeSec = time * 0.001;
-  const cloudTwinkleSuppression = smoothstep(0.2, 0.8, cloudCover);
-
-  for (const idx of twinkleIndices) {
-    const s = starData[idx];
-    const baseA = clamp01(s.intensity * s.extinction) * 0.95;
-    if (baseA < 0.002) continue;
-
-    const altitude = clamp01(1 - s.y / height);
-    const scint = smoothstep(0.0, 0.6, 1 - altitude);
-
-    const t1 = Math.sin(timeSec * 1.2 + s.phase) * 0.3 * scint;
-    const t2 = Math.sin(timeSec * 3.1 + s.phase * 1.7) * 0.25 * scint;
-    const t3 = Math.sin(timeSec * 6.7 + s.phase * 2.3) * s.intensity * 0.2 * scint;
-
-    const twinkleBoost =
-      Math.max(0, t1 + t2 + t3) * (1 - cloudTwinkleSuppression);
-
-    const glowTwinkle =
-      s.intensity > 0.82
-        ? clamp01(Math.sqrt(twinkleBoost) * 0.85)
-        : 0;
-
-    const glowLag =
-      1 + Math.sin(timeSec * 0.8 + s.glowPhase) * glowTwinkle * 0.3;
-
-    const a = clamp01(baseA * (1 + twinkleBoost) * globalAlpha);
-    if (a < 0.002) continue;
-
-    if (s.intensity > 0.6) {
-      const chroma = 1 + Math.sin(timeSec * 5.2 + s.phase) * 0.015;
-      ctx.filter = `brightness(${chroma})`;
-    }
-
-    const sprite = getStarSprite(
-      s.radius,
-      s.rgb,
-      s.intensity > 0.4,
-      1 + glowTwinkle * glowLag
-    );
-
-    const half = sprite.width / 2;
-    ctx.globalAlpha = a;
-    ctx.drawImage(sprite, s.x - half, s.y - half);
-
-    if (s.intensity > 0.9 && glowTwinkle > 0.2) {
-      ctx.globalAlpha = a * 0.35;
-      ctx.filter = 'blur(1px)';
-      ctx.drawImage(sprite, s.x - half, s.y - half);
-      ctx.filter = 'none';
-    }
-
-    ctx.filter = 'none';
-  }
-
   ctx.imageSmoothingEnabled = true;
   ctx.restore();
 };

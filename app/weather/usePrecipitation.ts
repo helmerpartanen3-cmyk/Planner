@@ -4,8 +4,8 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { PrecipitationSystem, Particle } from '@/lib/sky/precipitationSystem';
-import { PRECIPITATION_CONFIG } from '@/lib/sky/precipitationConfig';
+import { PrecipitationSystem, Particle } from './precipitationSystem';
+import { PRECIPITATION_CONFIG } from './precipitationConfig';
 
 const RAIN_GRADIENT_CACHE = new Map<string, CanvasGradient>();
 const SNOW_TEXTURE_CACHE = new Map<string, HTMLCanvasElement>();

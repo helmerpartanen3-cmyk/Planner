@@ -34,9 +34,20 @@ const sampleSkyColor = (layers: SkyLayerColors, normalizedY: number): [number, n
 const getCanvasContext = (canvas: HTMLCanvasElement) => {
   const context = canvas.getContext(
     '2d',
-    { colorSpace: 'display-p3', willReadFrequently: true } as CanvasRenderingContext2DSettings
+    { colorSpace: 'display-p3' } as CanvasRenderingContext2DSettings
   );
-  return context ?? canvas.getContext('2d', { willReadFrequently: true });
+  return context ?? canvas.getContext('2d');
+};
+
+/** Check if two layer sets are close enough to skip blending */
+const layersClose = (a: SkyLayerColors, b: SkyLayerColors, eps = 0.001): boolean => {
+  for (let i = 0; i < 3; i++) {
+    if (Math.abs(a.upperSky[i] - b.upperSky[i]) > eps) return false;
+    if (Math.abs(a.midSky[i] - b.midSky[i]) > eps) return false;
+    if (Math.abs(a.horizonBand[i] - b.horizonBand[i]) > eps) return false;
+    if (Math.abs(a.groundBounce[i] - b.groundBounce[i]) > eps) return false;
+  }
+  return true;
 };
 
 export const useSkyBackground = (state: SkyStateInput) => {
@@ -98,7 +109,10 @@ export const useSkyBackground = (state: SkyStateInput) => {
       last = now;
 
       const smoothing = 1 - Math.exp(-dt / 400);
-      currentRef.current = blendLayers(currentRef.current, targetRef.current, smoothing);
+      // Skip expensive OKLab blending when layers are already converged
+      if (!layersClose(currentRef.current, targetRef.current)) {
+        currentRef.current = blendLayers(currentRef.current, targetRef.current, smoothing);
+      }
 
       const { width, height } = sizeRef.current;
       
@@ -119,39 +133,11 @@ export const useSkyBackground = (state: SkyStateInput) => {
       precipSystem.update(dt / 1000, precipitation, precipIntensity);
       renderPrecipitation(ctx, precipSystem, precipitation, precipIntensity, currentRef.current);
 
-      // Render clouds
-      const cloudCover = stateRef.current.weather.cloudCover;
-      if (cloudCover > 0) {
-        if (!cloudsRendererRef.current) {
-          const cloudsCanvas = cloudsCanvasRef.current;
-          if (cloudsCanvas) {
-            try {
-              cloudsRendererRef.current = new SkyCloudsRenderer(cloudsCanvas);
-            } catch (e) {
-              console.warn('WebGL not supported for clouds:', e);
-            }
-          }
-        }
-        if (cloudsRendererRef.current) {
-          cloudsRendererRef.current.render(
-            now / 1000,
-            width,
-            height,
-            currentRef.current.upperSky,
-            currentRef.current.midSky,
-            currentRef.current.horizonBand,
-            stateRef.current.astronomy.sunElevation,
-            {
-              ...stateRef.current.weather,
-              lightningEffect: skyResult.lightningEffect
-            }
-          );
-        }
-      } else {
-        if (cloudsRendererRef.current) {
-          cloudsRendererRef.current.dispose();
-          cloudsRendererRef.current = null;
-        }
+      // Render clouds (disabled for development)
+      // const cloudCover = stateRef.current.weather.cloudCover;
+      if (cloudsRendererRef.current) {
+        cloudsRendererRef.current.dispose();
+        cloudsRendererRef.current = null;
       }
 
       raf = window.requestAnimationFrame(animate);
@@ -248,7 +234,7 @@ const mapPrecipitationToIntensity = (weather: SkyStateInput['weather']): 'light'
 const renderPrecipitation = (
   ctx: CanvasRenderingContext2D,
   system: PrecipitationSystem,
-  precipitationType: 'rain' | 'snow' | 'none',
+  precipitationType: 'rain' | 'snow' | 'storm' | 'none',
   intensity: 'light' | 'moderate' | 'heavy' = 'moderate',
   skyLayers: SkyLayerColors
 ) => {
