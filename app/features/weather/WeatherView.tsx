@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import {
   Sun,
   Cloud,
@@ -12,6 +12,7 @@ import {
   ThermometerSimple,
   MapPin,
   MagnifyingGlass,
+  Crosshair,
   Eye,
   CloudFog,
   CloudSun,
@@ -177,6 +178,87 @@ export default function WeatherView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const hourlyRef = useRef<HTMLDivElement>(null);
+
+  /* ── location autocomplete ─────────────────────────── */
+  interface GeoSuggestion {
+    name: string;
+    country: string;
+    admin1?: string;
+    latitude: number;
+    longitude: number;
+  }
+  const [suggestions, setSuggestions] = useState<GeoSuggestion[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(-1);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const fetchSuggestions = useCallback(async (q: string) => {
+    if (q.length < 2) { setSuggestions([]); return; }
+    try {
+      const res = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=en`,
+      );
+      const json = await res.json();
+      setSuggestions(json.results ?? []);
+    } catch { setSuggestions([]); }
+  }, []);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!input.trim()) { setSuggestions([]); return; }
+    debounceRef.current = setTimeout(() => fetchSuggestions(input.trim()), 250);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [input, fetchSuggestions]);
+
+  const selectSuggestion = (s: GeoSuggestion) => {
+    setCity(s.name);
+    localStorage.setItem("clarity-weather-city", s.name);
+    setInput("");
+    setSuggestions([]);
+    setShowDropdown(false);
+    setActiveIdx(-1);
+  };
+
+  const [locating, setLocating] = useState(false);
+
+  const useMyLocation = useCallback(() => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://geocoding-api.open-meteo.com/v1/search?name=_&count=1&language=en`,
+          );
+          // Use reverse geocoding via Open-Meteo forecast to get the resolved name
+          const wxRes = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m&timezone=auto`,
+          );
+          const wx = await wxRes.json();
+          // Reverse geocode with nominatim for the city name
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10`,
+          );
+          const geo = await geoRes.json();
+          const cityName =
+            geo.address?.city ||
+            geo.address?.town ||
+            geo.address?.village ||
+            geo.address?.municipality ||
+            geo.name ||
+            `${latitude.toFixed(2)},${longitude.toFixed(2)}`;
+          setCity(cityName);
+          localStorage.setItem("clarity-weather-city", cityName);
+          setInput("");
+        } catch { /* ignore */ }
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { timeout: 10000 },
+    );
+  }, []);
 
   /* ── build SkyStateInput from weather data ────────── */
   const skyState = useMemo<SkyStateInput>(() => {
@@ -407,24 +489,90 @@ export default function WeatherView() {
       <div className="relative h-full overflow-y-auto">
         <div className="max-w-[680px] mx-auto px-4 py-3 space-y-4">
           {/* ── search ─────────────────────────────────── */}
-          <div className="flex justify-center mb-2">
-            <div className="relative w-[260px] rounded-xl backdrop-blur-lg saturate-130">
-              <MagnifyingGlass
-                size={13}
-                weight="regular"
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none z-10"
-              />
-              <input
-                type="text"
-                placeholder="Search city..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                className="w-full pl-8 pr-3 py-2 rounded-xl bg-transparent border border-white/8 text-[13px] text-white/90 placeholder:text-white/25 outline-none focus:border-[#528BFF]/60 focus:ring-1 focus:ring-[#528BFF]/40 transition-colors"
-              />
+          <div className="flex justify-center items-center gap-2 mb-2">
+            <div className="relative w-[260px]" ref={dropdownRef}>
+              <div className="relative rounded-xl backdrop-blur-lg saturate-130">
+                <MagnifyingGlass
+                  size={13}
+                  weight="regular"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none z-10"
+                />
+                <input
+                  type="text"
+                  placeholder="Search city..."
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    setShowDropdown(true);
+                    setActiveIdx(-1);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setActiveIdx((p) => Math.min(p + 1, suggestions.length - 1));
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setActiveIdx((p) => Math.max(p - 1, -1));
+                    } else if (e.key === "Enter") {
+                      if (activeIdx >= 0 && suggestions[activeIdx]) {
+                        selectSuggestion(suggestions[activeIdx]);
+                      } else {
+                        handleSearch();
+                        setShowDropdown(false);
+                      }
+                    } else if (e.key === "Escape") {
+                      setShowDropdown(false);
+                    }
+                  }}
+                  onFocus={() => {
+                    setSearchFocused(true);
+                    if (suggestions.length) setShowDropdown(true);
+                  }}
+                  onBlur={() => {
+                    setSearchFocused(false);
+                    // delay so click on dropdown registers
+                    setTimeout(() => setShowDropdown(false), 150);
+                  }}
+                  className="w-full pl-8 pr-3 py-2 rounded-xl bg-transparent border border-white/8 text-[13px] text-white/90 placeholder:text-white/25 outline-none focus:border-[#528BFF]/60 focus:ring-1 focus:ring-[#528BFF]/40 transition-colors"
+                />
+              </div>
+
+              {/* dropdown */}
+              {showDropdown && suggestions.length > 0 && (
+                <div className="absolute z-50 mt-1.5 w-full rounded-xl overflow-hidden border border-white/10 bg-neutral-800/70 backdrop-blur-xl shadow-lg animate-slideDown">
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={`${s.name}-${s.latitude}-${s.longitude}`}
+                      onMouseDown={() => selectSuggestion(s)}
+                      onMouseEnter={() => setActiveIdx(i)}
+                      className={`w-full text-left px-3.5 py-2 flex items-center gap-2.5 transition-colors ${
+                        i === activeIdx ? "bg-white/10" : "hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      <MapPin size={12} weight="regular" className="text-white/30 shrink-0" />
+                      <div className="min-w-0">
+                        <span className="text-[12px] text-white/90 truncate block">{s.name}</span>
+                        <span className="text-[10px] text-white/35 truncate block">
+                          {[s.admin1, s.country].filter(Boolean).join(", ")}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+            <button
+              onClick={useMyLocation}
+              disabled={locating}
+              title="Use my location"
+              className="flex items-center justify-center w-[34px] h-[34px] rounded-xl backdrop-blur-lg saturate-130 border border-white/8 text-white/40 hover:text-white/70 hover:border-white/15 transition-colors shrink-0 disabled:opacity-40"
+            >
+              {locating ? (
+                <div className="w-3.5 h-3.5 border-[1.5px] border-white/10 border-t-white/50 rounded-full animate-spin" />
+              ) : (
+                <Crosshair size={14} weight="regular" />
+              )}
+            </button>
           </div>
 
           {loading && !data && (
