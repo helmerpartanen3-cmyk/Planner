@@ -263,10 +263,13 @@ export default function WeatherView() {
   /* ── build SkyStateInput from weather data ────────── */
   const skyState = useMemo<SkyStateInput>(() => {
     if (!data) {
-      // Default state (night sky) while loading
+      // Use real local time so the loading sky matches the user's actual time of day
+      const now = new Date();
+      const lt = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      const sunPos = getSunPosition(now, 60, 25);
       return {
-        time: { localTime: "12:00", sunrise: "07:00", sunset: "18:00" },
-        astronomy: { sunElevation: 45, sunAzimuth: 180, moonElevation: -10, moonPhase: 0.5 },
+        time: { localTime: lt, sunrise: "07:00", sunset: "18:00" },
+        astronomy: { sunElevation: sunPos.elevation, sunAzimuth: sunPos.azimuth, moonElevation: -10, moonPhase: 0.5 },
         weather: { cloudCover: 0.2, precipitation: "none", fogDensity: 0, visibility: 10 },
         environment: { latitude: 60, longitude: 25, season: "winter" },
       };
