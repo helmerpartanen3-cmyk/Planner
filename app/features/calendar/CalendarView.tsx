@@ -339,7 +339,7 @@ export default function CalendarView({ events, onEventsChange }: Props) {
                   key={ev.id}
                   onMouseEnter={() => setEditingId(ev.id)}
                   onMouseLeave={() => setEditingId(null)}
-                  className="group relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all"
+                  className="group relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all"
                   style={{ background: ev.color }}
                 >
                   <div className="flex-1 min-w-0">
@@ -416,7 +416,7 @@ export default function CalendarView({ events, onEventsChange }: Props) {
         </div>
 
         {/* content area */}
-        <div className="flex-1 overflow-hidden bg-neutral-800 rounded-4xl m-2 border border-white/[0.06]">
+        <div className="flex-1 overflow-hidden bg-neutral-800 rounded-2xl m-2 border border-white/[0.06]">
           {mode === "day" && (
             <DayView
               date={cursor}

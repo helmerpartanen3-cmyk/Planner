@@ -292,7 +292,7 @@ export default function TodayView({
           <div className="text-left min-w-0">
             <p className="text-[22px] font-semibold text-white/85 tabular-nums leading-none stat-number">
               {focusMinutes}
-              <span className="text-[13px] text-white/20 font-normal">m</span>
+              <span className="text-[13px] text-white/20 ml-1 font-normal">m</span>
             </p>
             <p className="text-[11px] text-white/30 mt-1">Focus</p>
           </div>

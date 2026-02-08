@@ -91,7 +91,7 @@ export default function Sidebar({
     <aside
       className={`w-[228px] h-full flex flex-col border-r select-none shrink-0 transition-colors duration-300 ${
         isWeather
-          ? "border-white/[0.03] bg-black/20"
+          ? "border-white/[0.03] bg-black/20 backdrop-blur-lg"
           : "border-white/[0.05] bg-black/12"
       }`}
     >

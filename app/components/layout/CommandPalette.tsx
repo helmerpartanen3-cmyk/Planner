@@ -232,7 +232,7 @@ export default function CommandPalette({
 
   return (
     <div
-      className="fixed bg-black/30 inset-0 z-50 flex items-start justify-center pt-[20vh] animate-overlay"
+      className="fixed bg-black/30 inset-0 z-50 flex items-start justify-center pt-[20vh]"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
