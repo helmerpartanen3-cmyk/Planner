@@ -1,4 +1,5 @@
 "use strict";
+// Elektronin pääprosessi. Hallinnoi sovelluksen ikkunan ja tietojen säilöntää.
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -6,7 +7,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-/* ── File-based JSON store in %APPDATA%/clarity ──────── */
 const storeDir = path_1.default.join(electron_1.app.getPath("userData"), "data");
 if (!fs_1.default.existsSync(storeDir))
     fs_1.default.mkdirSync(storeDir, { recursive: true });
@@ -25,9 +25,7 @@ function storeGet(key) {
 function storeSet(key, value) {
     fs_1.default.writeFileSync(storeFile(key), JSON.stringify(value), "utf-8");
 }
-/* ── Window ─────────────────────────────────────────── */
 let mainWindow = null;
-// IPC: persistent store (register once, before any window)
 electron_1.ipcMain.handle("store-get", (_event, key) => storeGet(key));
 electron_1.ipcMain.handle("store-set", (_event, key, value) => storeSet(key, value));
 function createWindow() {
@@ -39,8 +37,8 @@ function createWindow() {
         minHeight: 500,
         frame: false,
         titleBarStyle: "hidden",
-        backgroundMaterial: "mica", // Mica-like blur+transparency
-        backgroundColor: "#00000000", // required for Mica to render
+        backgroundMaterial: "mica",
+        backgroundColor: "#00000000",
         show: false,
         webPreferences: {
             preload: path_1.default.join(__dirname, "preload.js"),
@@ -57,14 +55,10 @@ function createWindow() {
         mainWindow.webContents.openDevTools({ mode: "detach" });
     }
     else {
-        // For packaged app, use app.getAppPath() which works with ASAR
         const outPath = path_1.default.join(electron_1.app.getAppPath(), "out/index.html");
         const fileUrl = `file://${outPath}`.replace(/\\/g, "/");
-        console.log("Loading from:", outPath);
-        console.log("File URL:", fileUrl);
         mainWindow.loadURL(fileUrl);
     }
-    // IPC window controls
     electron_1.ipcMain.on("window-minimize", () => {
         mainWindow?.minimize();
     });
@@ -79,7 +73,6 @@ function createWindow() {
     electron_1.ipcMain.on("window-close", () => {
         mainWindow?.close();
     });
-    // Maximize state sync
     mainWindow.on("maximize", () => {
         mainWindow?.webContents.send("window-maximized", true);
     });

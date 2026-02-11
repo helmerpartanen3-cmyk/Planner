@@ -1,4 +1,5 @@
 "use strict";
+// Elektronin preload-skripti. Altistaa turvalliset IPC-metodit selaimen kontekstille.
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 electron_1.contextBridge.exposeInMainWorld("electronAPI", {
@@ -12,7 +13,6 @@ electron_1.contextBridge.exposeInMainWorld("electronAPI", {
             electron_1.ipcRenderer.removeListener("window-maximized", handler);
         };
     },
-    // Persistent file store
     storeGet: (key) => electron_1.ipcRenderer.invoke("store-get", key),
     storeSet: (key, value) => electron_1.ipcRenderer.invoke("store-set", key, value),
 });
