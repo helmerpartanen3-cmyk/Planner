@@ -1,4 +1,5 @@
-// skyLightning.ts
+// Salamat. Ukkosessa ilmaantuvat salamaefektit.
+
 import { Rgb, toCssRgb, mixOklab } from './skyColor'
 import { clamp01, lerp, smoothstep } from './skyUtils'
 

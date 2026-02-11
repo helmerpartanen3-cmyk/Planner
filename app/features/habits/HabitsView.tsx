@@ -1,3 +1,5 @@
+// Tavat-näkymä. Hallinnoi päivittäisiä tavahtumisia ja niiden aineita.
+
 "use client";
 import React, { useState, useMemo, useCallback } from "react";
 import {

@@ -1,4 +1,5 @@
-// skyColor.ts
+// Värin käsittely. RGB- ja OkLab-värijärjestelmät.
+
 export type Rgb = [number, number, number];
 export type Oklab = [number, number, number];
 

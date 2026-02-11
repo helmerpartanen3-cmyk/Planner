@@ -1,4 +1,4 @@
-// skyTypes.ts
+// Säätyypit ja tietotyypit. Kaikki sää-järjestelmän rakenteet.
 
 export type SkyTimeInput = {
   localTime: string;

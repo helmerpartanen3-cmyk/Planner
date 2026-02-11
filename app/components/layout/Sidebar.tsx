@@ -1,3 +1,5 @@
+// Sivupalkki. Näyttää näkymät ja hallinnoi niiden järjestystä vetämällä.
+
 "use client";
 
 import { useRef, useState, useEffect } from "react";

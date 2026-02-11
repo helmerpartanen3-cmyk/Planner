@@ -1,3 +1,5 @@
+// Taivaan värimalli. Laskee värikerrokset tunneista ja sääolosuhteista.
+
 import { SkyLayerColors, SkyStateInput } from './skyTypes';
 import { adjustOklab, mixOklab, clampRgb } from './skyColor';
 

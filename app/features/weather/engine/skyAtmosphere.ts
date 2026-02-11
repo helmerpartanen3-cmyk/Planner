@@ -1,12 +1,10 @@
-// src/lib/sky/skyAtmosphere.ts
+// Ilmakehä ja pilveet. Piirtää sumua ja höyryä sekä salamaflaäriä.
+
 import { SkyLayerColors } from './skyTypes';
 import { toCssRgb } from './skyColor';
 import { SunScreenPos } from './skyView';
 import { clamp01, mixColor } from './skyUtils';
 
-// ----------------------------
-// Atmosphere: fog + stratus + optional lining
-// ----------------------------
 export const drawAtmosphere = (
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -19,7 +17,7 @@ export const drawAtmosphere = (
   sunVisibility?: number,
   lightningEffect?: { intensity: number; centers: { x: number; y: number; intensity: number }[]; radius: number; color?: string }
 ) => {
-  // REMOVED: Stratus cloud gradient - now using WebGL volumetric clouds
+  // VANHA: pilvi gradient korvattu WebGL-pilviin.
   /*
   const baseCloudColor = layers.horizonBand;
 

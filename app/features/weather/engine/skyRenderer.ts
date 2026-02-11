@@ -1,4 +1,5 @@
-// skyRenderer.ts
+// Taivaan piirtäminen. Yhdistää värit, pilveet ja ilmiöt yhdeksi renderöintiin.
+
 import { SkyLayerColors, SkyStateInput } from './skyTypes';
 import { toCssRgb } from './skyColor';
 import { clamp01 } from './skyUtils';
@@ -9,17 +10,10 @@ import { drawSun } from './skySun';
 import { drawThunderstormWithEffect } from './skyLightning';
 import { getSunScreenPosition } from './skyView';
 
-// ----------------------------
-// Gradient cache — skip recreating gradient + CSS strings
-// every frame when the sky layers haven't changed.
-// ----------------------------
 let cachedGradientLayers: SkyLayerColors | null = null;
 let cachedGradientH = 0;
 let cachedStops: [string, string, string] = ['', '', ''];
 
-// ----------------------------
-// Main render
-// ----------------------------
 export const renderSkyGradient = (
   ctx: CanvasRenderingContext2D,
   width: number,

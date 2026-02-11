@@ -1,3 +1,5 @@
+// Keskittymis-näkymä. Pomodoro-ajastin pitkän kestävyyden rakentamiseen.
+
 "use client";
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {

@@ -1,3 +1,5 @@
+// Päälayout-komponentit: sivupalkki, otsikkopalkki ja komentopalkki.
+
 export { default as Sidebar } from "./Sidebar";
 export { default as Titlebar } from "./Titlebar";
 export { default as CommandPalette } from "./CommandPalette";

@@ -1,3 +1,5 @@
+// Pääsivu. Hallinnoi näkymien vaihtamista ja sovelluksen globaalia tilaa.
+
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -20,14 +22,12 @@ export default function Home() {
     DEFAULT_NAV_ORDER
   );
 
-  // Ensure persisted order always includes all default items and no stale ones
   const navOrder = (() => {
     const valid = navOrderRaw.filter((id) => DEFAULT_NAV_ORDER.includes(id));
     const missing = DEFAULT_NAV_ORDER.filter((id) => !valid.includes(id));
     return [...valid, ...missing];
   })();
 
-  // Persist the corrected order if it differs
   useEffect(() => {
     if (
       navOrder.length !== navOrderRaw.length ||
@@ -46,14 +46,12 @@ export default function Home() {
   const [focusSessions, setFocusSessions] = useLocalStorage<FocusSession[]>("clarity-focus-sessions", []);
   const [goals, setGoals] = useLocalStorage<Goal[]>("clarity-goals", []);
 
-  // Set the startup view to the first item in the persisted order (wait for hydration)
   useEffect(() => {
     if (view === null && navHydrated && navOrder.length > 0) {
       setView(navOrder[0]);
     }
   }, [navOrder, navHydrated, view]);
 
-  // Ctrl+K command palette shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {

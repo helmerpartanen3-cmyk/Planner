@@ -1,3 +1,5 @@
+// Tämän päivän näkymä. Näyttää yhteenvedon tehtävistä, tapahtumista ja tavoitteista.
+
 "use client";
 
 import { useMemo } from "react";

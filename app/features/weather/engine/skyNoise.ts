@@ -1,6 +1,6 @@
-// src/lib/sky/skyNoise.ts
+// Kohinatehoste. Lisää tekstuuria ja vaihtelua taivaaseen.
 
-// ----------------------------
+
 // Noise tile (cheap dithering/grain)
 // ----------------------------
 let noiseTileCanvas: HTMLCanvasElement | null = null;

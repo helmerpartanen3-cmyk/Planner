@@ -1,7 +1,4 @@
-/**
- * usePrecipitation Hook
- * Manages precipitation rendering on canvas with rain streaks and snow flakes
- */
+// Sadepartikulit. Hallinnoi sateen ja lumen renderöintiä kanvaalla.
 
 import React, { useEffect, useRef } from 'react';
 import { PrecipitationSystem, Particle } from './precipitationSystem';

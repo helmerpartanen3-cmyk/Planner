@@ -1,4 +1,4 @@
-// src/lib/sky/skyView.ts
+// Näkymägeometria. Auringon ja muiden elementtien sijainti ruudulla.
 
 export type SunScreenPos = { x: number; y: number };
 

@@ -1,7 +1,7 @@
 {
-  "name": "clarity",
+  "name": "planner",
   "version": "0.1.0",
-  "description": "Clarity – Calendar & Life Manager",
+  "description": "Planner is a modern, minimalist calendar application built with Next.js and Electron.",
   "author": "Helmer Partanen <helmerpartanen3@gmail.com>",
   "private": true,
   "main": "dist-electron/main.js",

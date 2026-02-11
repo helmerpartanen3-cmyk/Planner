@@ -1,3 +1,5 @@
+// Tehtävänäkymä. Hallinnoi päivittäisiä tehtäviä ja prioriteetteja.
+
 "use client";
 
 import { useState, useMemo } from "react";

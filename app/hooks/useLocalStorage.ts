@@ -1,8 +1,8 @@
+// Paikallisen tallennus hook. Synkronoi tiedot Elektronin tai selaimen säilöön.
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-
-/* ── Electron bridge types ───────────────────────────── */
 
 interface ElectronAPI {
   storeGet?: (key: string) => Promise<unknown | null>;
@@ -17,8 +17,6 @@ function getElectronStore(): ElectronAPI | null {
   return null;
 }
 
-/* ── Hook ────────────────────────────────────────────── */
-
 export function useLocalStorage<T>(
   key: string,
   initialValue: T
@@ -28,22 +26,19 @@ export function useLocalStorage<T>(
   const valueRef = useRef(value);
   valueRef.current = value;
 
-  // Read from store on mount
   useEffect(() => {
     const electron = getElectronStore();
     if (electron) {
-      // Use Electron file store (AppData)
       electron.storeGet!(key).then((stored) => {
         if (stored !== null && stored !== undefined) setValue(stored as T);
         setHydrated(true);
       });
     } else {
-      // Fallback to localStorage (browser / dev)
       try {
         const stored = localStorage.getItem(key);
         if (stored) setValue(JSON.parse(stored));
       } catch {
-        /* ignore */
+        null;
       }
       setHydrated(true);
     }

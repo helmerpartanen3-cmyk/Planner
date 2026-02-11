@@ -1,5 +1,4 @@
-// cloudTypes.ts
-// Different cloud configurations based on weather conditions
+// Pilvityypit ja kokoonpanot. Määritellään pilvet sääolosuhteiden perusteella.
 
 export interface CloudTypeConfig {
   // Size and shape parameters

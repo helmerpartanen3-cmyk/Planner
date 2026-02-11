@@ -1,5 +1,4 @@
-// skyClouds.ts
-// WebGL-based cloud renderer using 3D Simplex noise
+// WebGL-pohjainen pilvi renderöinti. Interaktiivinen ja säästävä.
 
 import { CloudTypeConfig, determineCloudType, CLOUD_TYPE_CONFIGS } from './cloudTypes';
 

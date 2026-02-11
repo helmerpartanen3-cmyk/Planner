@@ -1,8 +1,8 @@
+// Elektronin pääprosessi. Hallinnoi sovelluksen ikkunan ja tietojen säilöntää.
+
 import { app, BrowserWindow, ipcMain, screen } from "electron";
 import path from "path";
 import fs from "fs";
-
-/* ── File-based JSON store in %APPDATA%/clarity ──────── */
 
 const storeDir = path.join(app.getPath("userData"), "data");
 if (!fs.existsSync(storeDir)) fs.mkdirSync(storeDir, { recursive: true });
@@ -24,11 +24,8 @@ function storeSet(key: string, value: unknown): void {
   fs.writeFileSync(storeFile(key), JSON.stringify(value), "utf-8");
 }
 
-/* ── Window ─────────────────────────────────────────── */
-
 let mainWindow: BrowserWindow | null = null;
 
-// IPC: persistent store (register once, before any window)
 ipcMain.handle("store-get", (_event, key: string) => storeGet(key));
 ipcMain.handle("store-set", (_event, key: string, value: unknown) => storeSet(key, value));
 
@@ -43,8 +40,8 @@ function createWindow() {
 
     frame: false,
     titleBarStyle: "hidden",
-    backgroundMaterial: "mica", // Mica-like blur+transparency
-    backgroundColor: "#00000000", // required for Mica to render
+    backgroundMaterial: "mica",
+    backgroundColor: "#00000000",
 
     show: false,
 
@@ -65,15 +62,11 @@ function createWindow() {
     mainWindow.loadURL("http://localhost:3000");
     mainWindow.webContents.openDevTools({ mode: "detach" });
   } else {
-    // For packaged app, use app.getAppPath() which works with ASAR
     const outPath = path.join(app.getAppPath(), "out/index.html");
     const fileUrl = `file://${outPath}`.replace(/\\/g, "/");
-    console.log("Loading from:", outPath);
-    console.log("File URL:", fileUrl);
     mainWindow.loadURL(fileUrl);
   }
 
-  // IPC window controls
   ipcMain.on("window-minimize", () => {
     mainWindow?.minimize();
   });
@@ -90,7 +83,6 @@ function createWindow() {
     mainWindow?.close();
   });
 
-  // Maximize state sync
   mainWindow.on("maximize", () => {
     mainWindow?.webContents.send("window-maximized", true);
   });

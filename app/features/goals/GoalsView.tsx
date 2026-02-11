@@ -1,3 +1,5 @@
+// Tavoitteet-näkymä. Aseta ja seuraa pitkän aikavälin tavoitteita.
+
 "use client";
 import React, { useState, useMemo, useCallback } from "react";
 import {

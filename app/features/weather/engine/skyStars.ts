@@ -1,7 +1,4 @@
-/**
- * skyStars.ts
- * Physically inspired night-sky starfield generator.
- */
+// Tähdet. Yötaivaan tähtikentän generointi.
 
 export type Star = {
   x: number;

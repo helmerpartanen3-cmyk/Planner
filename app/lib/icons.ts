@@ -1,9 +1,5 @@
-/**
- * Shared icon system for habits and other features.
- *
- * Centralizes icon options so multiple features (HabitsView, TodayView)
- * can reference habit icons without cross-feature imports.
- */
+// Ikonit ja kaavat. Tavat, tehtävät ja muut elementit käyttävät näitä.
+
 import {
   Barbell,
   BookOpen,

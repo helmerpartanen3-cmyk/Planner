@@ -1,9 +1,5 @@
-/**
- * Application color palette
- *
- * Shared accent colors used throughout the app for events, habits,
- * goals, notes, and other color-coded UI elements.
- */
+// Väripaletti. Aksenttivärit tapahtumat, tavat, tavoitteet ja muut elementit.
+
 export const APP_COLORS = [
   "#528BFF", // blue – primary, calm and trustworthy
   "#34D399", // green – success / progress

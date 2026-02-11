@@ -1,3 +1,5 @@
+// Tähdet piirtäminen. Renderöi tähtikentän kanvaalle.
+
 import { Star } from './skyStars';
 import { createStarField } from './skyStars';
 import { clamp01, mixColor } from './skyUtils';

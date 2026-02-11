@@ -1,6 +1,4 @@
-/**
- * Common date utilities shared across features.
- */
+// Päivämäärätyyppien hyödylliset apufunktiot.
 
 /** Returns today's date as YYYY-MM-DD */
 export function todayStr(): string {

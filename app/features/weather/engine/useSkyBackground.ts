@@ -1,3 +1,5 @@
+// Taivaan taustagrafiikka. Hallinnoi värigradientin ja hiukkasten renderöintiä.
+
 // useSkyBackground.ts
 import { useEffect, useRef } from 'react';
 import { SkyLayerColors, SkyStateInput } from './skyTypes';

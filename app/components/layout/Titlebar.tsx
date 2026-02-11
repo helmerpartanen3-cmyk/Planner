@@ -1,3 +1,5 @@
+// Otsikkopalkki. Ikkunan hallintapainikkeet ja vedettävä alue.
+
 "use client";
 
 import { useEffect, useState, useCallback } from "react";

@@ -1,3 +1,5 @@
+// Komentopalkki. Nopea navigointi ja pikalisäys Ctrl+K-näppäimellä.
+
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";

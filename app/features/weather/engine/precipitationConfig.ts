@@ -1,16 +1,12 @@
-/**
- * Precipitation System Configuration
- * Defines the physics, rendering, and visual parameters for rain and snow
- * Philosophy: Perceptual realism over physical simulation
- */
+// Sadejärjestelmän konfiguraatio. Sateen ja lumen parametrit ja fysiikka.
 
 export interface IntensityLevel {
-  spawnRate: number; // particles per second
-  lifetime: number; // seconds
-  velocity: { y: [number, number] }; // y range in pixels/second
-  size: [number, number]; // size range (relative to base)
-  opacity: [number, number]; // opacity range (0-1)
-  drift?: number; // maximum horizontal drift amplitude (pixels)
+  spawnRate: number;
+  lifetime: number;
+  velocity: { y: [number, number] };
+  size: [number, number];
+  opacity: [number, number];
+  drift?: number;
   description: string;
 }
 

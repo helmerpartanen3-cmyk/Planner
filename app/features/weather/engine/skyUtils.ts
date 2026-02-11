@@ -1,4 +1,5 @@
-// src/lib/sky/skyUtils.ts
+// Apufunktiot. Matemaattiset ja värin käsittelyn operaatiot.
+
 import { mixOklab } from './skyColor';
 
 export const clamp01 = (v: number) => Math.max(0, Math.min(1, v));

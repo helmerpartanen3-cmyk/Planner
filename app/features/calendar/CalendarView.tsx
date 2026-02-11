@@ -1,3 +1,5 @@
+// Kalenterinäkymä. Hallinnoi tapahtumia kuukausi- ja viikkonäkymällä.
+
 "use client";
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";

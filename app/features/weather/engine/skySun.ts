@@ -1,6 +1,5 @@
-// skySun.ts
-// Realistic sun renderer — cached sprites, limb darkening, elevation-based
-// color temperature, atmospheric corona, cloud/fog interaction.
+// Auringon renderöinti. Realistinen aurinko varjoineen ja värinmuutoksilla.
+
 // Apple Weather-style chromatic lens flare system.
 
 import { SunScreenPos } from './skyView';

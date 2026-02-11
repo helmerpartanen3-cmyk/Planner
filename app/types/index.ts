@@ -1,10 +1,4 @@
-/* ── Domain Types ─────────────────────────────────────
- *
- * All shared data models used across features.
- * Grouped by domain, exported from a single barrel.
- */
-
-// ── Calendar ────────────────────────────────────────
+// Sovelluksen tietotyypit. Kalenteri, tehtävät, tavat ja muut alueet.
 
 export interface CalendarEvent {
   id: string;

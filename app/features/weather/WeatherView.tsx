@@ -1,3 +1,5 @@
+// Säänäkymä. Näyttää animoituja säätiloja sekä tunti- ja viikkoennusteita.
+
 "use client";
 
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";

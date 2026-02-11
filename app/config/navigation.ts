@@ -1,3 +1,5 @@
+// Navigaation konfiguraatio ja metadata näkymille.
+
 import {
   CalendarBlank,
   CalendarDot,
@@ -10,7 +12,6 @@ import {
 } from "@phosphor-icons/react";
 import type { ViewType } from "../types";
 
-/** Default ordering for sidebar navigation items */
 export const DEFAULT_NAV_ORDER: ViewType[] = [
   "today",
   "calendar",
