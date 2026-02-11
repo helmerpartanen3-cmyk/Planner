@@ -10,10 +10,6 @@ Yksinkertainen sovellus elämän järjestämiseen. Kalenteri, tehtävät, tavoit
 - Katsella animoituja sääkuvia
 - Käyttää Pomodoro-ajastinta keskittymiseen
 
-## Käyttöönotto
-
-Lataa asennusohjelma [release-sivulta](https://github.com/yourusername/clarity/releases) ja suorita se.
-
 ## Kehitys
 
 ```bash
