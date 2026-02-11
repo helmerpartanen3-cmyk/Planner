@@ -27,7 +27,6 @@ function storeSet(key: string, value: unknown): void {
 /* ── Window ─────────────────────────────────────────── */
 
 let mainWindow: BrowserWindow | null = null;
-const isDev = process.env.NODE_ENV !== "production";
 
 // IPC: persistent store (register once, before any window)
 ipcMain.handle("store-get", (_event, key: string) => storeGet(key));
@@ -60,13 +59,18 @@ function createWindow() {
     mainWindow?.show();
   });
 
+  const isDev = !app.isPackaged;
+
   if (isDev) {
     mainWindow.loadURL("http://localhost:3000");
     mainWindow.webContents.openDevTools({ mode: "detach" });
   } else {
-    mainWindow.loadURL(
-      `file://${path.join(__dirname, "../out/index.html")}`
-    );
+    // For packaged app, use app.getAppPath() which works with ASAR
+    const outPath = path.join(app.getAppPath(), "out/index.html");
+    const fileUrl = `file://${outPath}`.replace(/\\/g, "/");
+    console.log("Loading from:", outPath);
+    console.log("File URL:", fileUrl);
+    mainWindow.loadURL(fileUrl);
   }
 
   // IPC window controls

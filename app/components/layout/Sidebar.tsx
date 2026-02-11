@@ -100,14 +100,7 @@ export default function Sidebar({
         className="h-9 flex items-center px-5 shrink-0"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       >
-        <div className="flex items-center gap-2">
-          <div className="w-[6px] h-[6px] rounded-full bg-[#528BFF]" />
-          <span className="text-[11px] font-semibold text-white/50 tracking-[0.2em] uppercase">
-            Clarity
-          </span>
         </div>
-      </div>
-
       {/* Quick action - Command Palette */}
       <div className="px-3 mb-1">
         <button

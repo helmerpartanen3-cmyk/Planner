@@ -1,6 +1,8 @@
 {
   "name": "clarity",
   "version": "0.1.0",
+  "description": "Clarity – Calendar & Life Manager",
+  "author": "Helmer Partanen <helmerpartanen3@gmail.com>",
   "private": true,
   "main": "dist-electron/main.js",
   "scripts": {
